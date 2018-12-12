@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://transcript.gd" type="Script" id=1]
+
+[node name="transcript" type="Line2D"]
+
+points = PoolVector2Array( 0, 0, 0, 0 )
+width = 10.0
+default_color = Color( 0.4, 0.5, 1, 1 )
+texture_mode = 45
+sharp_limit = 2.0
+round_precision = 8
+script = ExtResource( 1 )
+
+
