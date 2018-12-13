@@ -15,9 +15,10 @@ var startdrag = Vector2(0,0)
 var enddrag = Vector2(0,0)
 
 
-func init(pos):
+func init(pos, r):
 	center = pos
-
+	radius = r
+	#draw_circle(center, r, color)
 #func _process(delta):
 	#update()
 
@@ -38,4 +39,5 @@ func _ready():
 #	pass
 func _draw():
 	draw_circle(center, radius, color)
+	
 	

@@ -31,9 +31,10 @@ func addBead():
 	
 	
 	#print(oldP, canvX, canvY)
-	var nodebead = load('res://blueball.tscn').instance()
-	nodebead.init(newP)
+	var nodebead = load('res://bluedot.tscn').instance()
+	nodebead.init(newP, unit*0.2)
 	nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
+	nodebead.z_index = 2
 	add_child(nodebead)
 	print(nodebead.name)
 	
@@ -58,6 +59,7 @@ func addEdge():
 	var nodetrans = load('res://transcript.tscn').instance()
 	nodetrans.init(oldP, newP)
 	nodetrans.name = "trans "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
+	nodetrans.z_index = 1
 	print(nodetrans.name)
 	add_child(nodetrans)
 
@@ -79,7 +81,7 @@ func _unhandled_input(event):
 						newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 						addBead()
 						
-						if oldP.x!=-10000:
+						if get_parent().gui.folBtn.pressed:
 							addEdge()
 					else:
 						delBead()

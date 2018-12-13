@@ -6,7 +6,7 @@
 [node name="OriCanvas" type="Node2D" index="0"]
 
 script = ExtResource( 1 )
-_sections_unfolded = [ "Transform" ]
+_sections_unfolded = [ "Transform", "Z Index" ]
 
 [node name="transcript" parent="." index="0" instance=ExtResource( 2 )]
 
