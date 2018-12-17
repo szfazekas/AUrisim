@@ -57,10 +57,25 @@ func generateDeltaPath(start, trans):
 	print(len(dpath[delta]))
 
 
-func backTrackBonds():
-	var bondo = []
-	for i in range(delta):
-		bondNo.append(arity)
+func decrease(list, index):
+	var succ = false
+	while not(succ) and index>=0:
+		if list[index]>0:
+			list[index] = list[index] - 1
+		else:
+			index = index - 1
+
+
+func getBonds():
+	# path has the current path
+	# bonds has all possible bond structures for this path; initially empty
+	bonds = []
+	# for each bead in the path
+	for i in range(len(path)):
+		# for each bond structure with fewer beads
+		for j in bonds[] 
+		#set arity+1 many lists
+	
 	
 
 func addBead():
