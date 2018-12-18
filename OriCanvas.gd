@@ -141,6 +141,8 @@ func filterSupArity(preBonds, elongs):
 					preBonds[j+neighborhood[l]] += 1
 	pass
 
+
+
 func getBonds(preBonds):
 	# path has the current path
 	# bonds has all possible bond structures for this path; initially empty
@@ -252,10 +254,12 @@ func _unhandled_input(event):
 func _ready():
 	print(self.get_viewport_rect().size)
 	self.translate(self.get_viewport_rect().size/2)
-	bondCombos = genCombSet(neighborhood, 2)
+	bondCombos = genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)
 	var tmpBonds = {}
-	
-	print(len(genCart([range(100),range(1000)])))
+	#print(genCombSet(neighborhood,0))
+	var tmp = genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)
+	print(len(genCartPower(tmp,delta)))
+	print(len(genCart([genCombSet(neighborhood,2) + genCombSet(neighborhood,1) + genCombSet(neighborhood,0),genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)])))
 	#print(bondCombos)
 	#print(generateCartesian([1,2,3],3))
 	#PossibleBonds = filterSupArity(tmpBonds, generateDeltaPath(Vector2(0,0), [transcript[i] for i in range(delta)]))
