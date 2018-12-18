@@ -5,6 +5,9 @@ onready var delBtn = $DelBtn
 onready var delLab = $DelLabel
 onready var folBtn = $FollowBtn
 onready var folLab = $FollowLabel
+onready var bondBtn = $BondBtn
+onready var foldBtn = $Fold
+
 
 # class member variables go here, for example:
 # var a = 2

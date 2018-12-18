@@ -7,6 +7,10 @@ extends Node2D
 # var b = "textvar"
 const neighborhood = [Vector2(1,0), Vector2(1,1), Vector2(0,1), Vector2(-1,0), Vector2(-1,-1), Vector2(0,-1)]
 
+var delta = 3
+var arity = 2
+var sigma = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
+var transcript = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 
 var rotation_ang = 50
 var angle_from = 75
@@ -18,7 +22,7 @@ var newb = 200
 
 var unit = 100
 
-var shear = Transform2D(Vector2(1,0), Vector2(0.5, sqrt(3)/2), Vector2(0,0))
+var shear = Transform2D(Vector2(1,0), Vector2(-0.5, -sqrt(3)/2), Vector2(0,0))
 var oldP = Vector2(0,0)
 var newP = Vector2(-10000,0)
 var currentP = Vector2(0,0)
@@ -36,6 +40,43 @@ var pressed = false
 var startdrag = Vector2(0,0)
 var enddrag = Vector2(0,0)
 
+
+
+
+func generateDeltaPath(start, trans):
+	var prolong = [{}]
+	var dpath = [[[start]]]
+	for i in range(delta):
+		prolong.append({})
+		dpath.append([])
+		for j in dpath[i]:
+			for dir in neighborhood:
+				if not(beads.has(j[-1]+dir) or j.has(j[-1]+dir)):
+					prolong[i][j[-1]+dir] = trans[i]
+					dpath[i+1].append(j+[j[-1]+dir]) 
+	print(len(dpath[delta]))
+
+
+func decrease(list, index):
+	var succ = false
+	while not(succ) and index>=0:
+		if list[index]>0:
+			list[index] = list[index] - 1
+		else:
+			index = index - 1
+
+
+func getBonds():
+	# path has the current path
+	# bonds has all possible bond structures for this path; initially empty
+	bonds = []
+	# for each bead in the path
+	for i in range(len(path)):
+		# for each bond structure with fewer beads
+		for j in bonds[] 
+		#set arity+1 many lists
+	
+	
 
 func addBead():
 	
@@ -72,6 +113,14 @@ func addEdge():
 	add_child(nodetrans)
 
 
+func addBond():
+	var nodetrans = load('res://bond.tscn').instance()
+	nodetrans.init(oldP, newP)
+	nodetrans.name = "bond "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
+	nodetrans.z_index = 0
+	print(nodetrans.name)
+	add_child(nodetrans)
+
 func _unhandled_input(event):
 	if event is InputEventMouseButton:
 		if event.button_index == BUTTON_LEFT:
@@ -90,6 +139,10 @@ func _unhandled_input(event):
 						
 						if (get_parent().gui.folBtn.pressed) and ((newPP-oldPP) in neighborhood):
 							addEdge()
+						elif (get_parent().gui.bondBtn.pressed) and ((newPP-oldPP) in neighborhood):
+							addBond()
+						elif (get_parent().gui.foldBtn.pressed):
+							generateDeltaPath(newPP, [1,1,1])
 					else:
 						delBead()
 					
