@@ -36,6 +36,9 @@ var paths = []
 var bonds = []
 
 
+var bondCombos								# from 6 directions choose at most arity many, all possible combinations
+var PossibleBonds = []						# all possible elongations on an empty grid, which are arity-valid and not self-intersecting 
+
 var pressed = false
 var startdrag = Vector2(0,0)
 var enddrag = Vector2(0,0)
@@ -66,16 +69,47 @@ func decrease(list, index):
 			index = index - 1
 
 
-func getBonds():
+func generateComb(set,k):
+	var tmp = []
+	if set == [] or k == 0:
+		return [[]]
+	for i in set:
+		var tmp2 = set.duplicate()
+		tmp2.erase(i)
+		print(tmp2)
+		for j in generateComb(tmp2, k-1):
+			tmp.append([i]+j) 
+	return tmp 
+
+func generateCartesian(set, k):
+	var cart = []
+	if set == [] or k == 0:
+		return [[]]
+	for i in set:
+		for j in generateCartesian(set, k-1):
+			cart.append([i]+j) 
+	return cart
+
+
+func filterSupArity(preBonds, elongs):
+	var tmp = generateComb()
+	for i in elongs:
+		for j in i:
+			for k in bondCombos:
+				for l in k:
+					preBonds[j+neighborhood[l]] += 1
+	pass
+
+func getBonds(preBonds):
 	# path has the current path
 	# bonds has all possible bond structures for this path; initially empty
-	bonds = []
+	var bonds = [[preBonds]]
 	# for each bead in the path
-	for i in range(len(path)):
+	#for i in range(len(path)):
 		# for each bond structure with fewer beads
-		for j in bonds[] 
+		#for j in bonds[i]:
 		#set arity+1 many lists
-	
+	pass
 	
 
 func addBead():
@@ -87,7 +121,7 @@ func addBead():
 		nodebead.z_index = 2
 		add_child(nodebead)
 		beads[newPP] = 1
-		print(nodebead.name, beads)
+		#print(nodebead.name, beads)
 	
 	
 func delBead():
@@ -143,6 +177,7 @@ func _unhandled_input(event):
 							addBond()
 						elif (get_parent().gui.foldBtn.pressed):
 							generateDeltaPath(newPP, [1,1,1])
+							print(generateComb([1,2,3,4],3))
 					else:
 						delBead()
 					
@@ -177,9 +212,11 @@ func _unhandled_input(event):
 func _ready():
 	print(self.get_viewport_rect().size)
 	self.translate(self.get_viewport_rect().size/2)
-	# Called when the node is added to the scene for the first time.
-	# Initialization here
-#	pass
+	bondCombos = generateComb(neighborhood, arity)
+	var tmpBonds = {}
+	print(generateCartesian([1,2,3],3))
+	#PossibleBonds = filterSupArity(tmpBonds, generateDeltaPath(Vector2(0,0), [transcript[i] for i in range(delta)]))
+
 
 #func _process(delta):
 #	# Called every frame. Delta is time since last frame.
