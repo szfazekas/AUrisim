@@ -7,6 +7,8 @@ extends Node2D
 # var b = "textvar"
 const neighborhood = [Vector2(1,0), Vector2(1,1), Vector2(0,1), Vector2(-1,0), Vector2(-1,-1), Vector2(0,-1)]
 
+var arial = load('res://arial.tres')
+
 var delta = 3
 var arity = 2
 var sigma = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
@@ -158,11 +160,11 @@ func getBonds(preBonds):
 func addBead():
 	if not(beads.has(newPP)):
 		var nodebead = load('res://bluedot.tscn').instance()
-		nodebead.init(newP, unit*0.2)
+		nodebead.init(newP, unit*0.2, str(get_parent().gui.btSelect.get_selected_id()))
 		nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
 		nodebead.z_index = 2
 		add_child(nodebead)
-		beads[newPP] = 1
+		beads[newPP] = get_parent().gui.btSelect.get_selected_id()
 		#print(nodebead.name, beads)
 	
 
@@ -219,7 +221,7 @@ func _unhandled_input(event):
 							addBond()
 						elif (get_parent().gui.foldBtn.pressed):
 							generateDeltaPath(newPP, [1,1,1])
-							print(generateComb([1,2,3,4],3))
+							print(genCombSet([1,2,3,4],3))
 					else:
 						delBead()
 					
@@ -271,6 +273,8 @@ func _ready():
 #	pass
 
 func _draw():
+	arial.set_size(30)
+	#draw_string(arial, center, '2345fdfdsa', Color(255,255,255))
 	var tx = shear.xform(Vector2(unit,0))
 	var ty = shear.xform(Vector2(0,unit))
 	draw_line(currentP - tx/2 - ty/2, currentP - tx/2 + ty/2, color)
