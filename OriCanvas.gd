@@ -45,7 +45,7 @@ var enddrag = Vector2(0,0)
 
 
 
-
+# generate all non-intersecting paths of length delta, which are consistent with beads[], starting from start
 func generateDeltaPath(start, trans):
 	var prolong = [{}]
 	var dpath = [[[start]]]
@@ -57,7 +57,6 @@ func generateDeltaPath(start, trans):
 				if not(beads.has(j[-1]+dir) or j.has(j[-1]+dir)):
 					prolong[i][j[-1]+dir] = trans[i]
 					dpath[i+1].append(j+[j[-1]+dir]) 
-	print(len(dpath[delta]))
 
 
 func decrease(list, index):
@@ -69,26 +68,68 @@ func decrease(list, index):
 			index = index - 1
 
 
-func generateComb(set,k):
-	var tmp = []
-	if set == [] or k == 0:
-		return [[]]
-	for i in set:
-		var tmp2 = set.duplicate()
-		tmp2.erase(i)
-		print(tmp2)
-		for j in generateComb(tmp2, k-1):
-			tmp.append([i]+j) 
-	return tmp 
 
-func generateCartesian(set, k):
+# generate all combinations n choose k
+func genComb(n, k):
+	if n < k or k < 0:
+		return []
+	var index = k-1
+	var combos = []
+	var comb = []
+	
+	for i in range(k):
+		comb.append(i)
+	combos.append(comb.duplicate())
+	
+	while index >= 0:
+		if comb[index] < n-k+index:
+			comb[index] += 1
+			for i in range(index+1, k):
+				comb[i] = comb[i-1] + 1
+			combos.append(comb.duplicate())
+			index = k-1
+		else:
+			index -= 1
+	return combos
+
+
+# generate all combinations of k elements from set
+func genCombSet(set,k):
+	var tmp = genComb(len(set), k)
+	var combos = []
+	var comb = []
+	for i in tmp:
+		comb = []
+		for j in i:
+			comb.append(set[j])
+		combos.append(comb.duplicate())
+	return combos 
+
+
+# generate Cartesian power k of set
+func genCartPower(set, k):
 	var cart = []
 	if set == [] or k == 0:
 		return [[]]
+	var tmp = genCartPower(set, k-1)
 	for i in set:
-		for j in generateCartesian(set, k-1):
+		for j in tmp:
 			cart.append([i]+j) 
 	return cart
+
+
+# generate Cartesian product of sets
+func genCart(sets):
+	var cart = []
+	if sets == [] or sets.has([]):
+		return [[]]
+	var tmp = sets.pop_front()
+	var tmp2 = genCart(sets)
+	for i in tmp:
+		for j in tmp2:
+			cart.append([i]+j) 
+	return cart
+
 
 
 func filterSupArity(preBonds, elongs):
@@ -113,7 +154,6 @@ func getBonds(preBonds):
 	
 
 func addBead():
-	
 	if not(beads.has(newPP)):
 		var nodebead = load('res://bluedot.tscn').instance()
 		nodebead.init(newP, unit*0.2)
@@ -123,7 +163,7 @@ func addBead():
 		beads[newPP] = 1
 		#print(nodebead.name, beads)
 	
-	
+
 func delBead():
 	var lt = get_children()
 	var i = 0
@@ -212,9 +252,12 @@ func _unhandled_input(event):
 func _ready():
 	print(self.get_viewport_rect().size)
 	self.translate(self.get_viewport_rect().size/2)
-	bondCombos = generateComb(neighborhood, arity)
+	bondCombos = genCombSet(neighborhood, 2)
 	var tmpBonds = {}
-	print(generateCartesian([1,2,3],3))
+	
+	print(len(genCart([range(100),range(1000)])))
+	#print(bondCombos)
+	#print(generateCartesian([1,2,3],3))
 	#PossibleBonds = filterSupArity(tmpBonds, generateDeltaPath(Vector2(0,0), [transcript[i] for i in range(delta)]))
 
 
