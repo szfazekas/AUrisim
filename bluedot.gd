@@ -15,6 +15,7 @@ var pressed = false
 var startdrag = Vector2(0,0)
 var enddrag = Vector2(0,0)
 var arial = load('res://arial.tres')
+var arialshift = Vector2(arial.get_ascent()/3.5, -arial.get_ascent()/2.5)
 
 func init(pos, r, l):
 	center = pos
@@ -42,5 +43,5 @@ func _ready():
 func _draw():
 	#var arial = load('res://arial.tres')
 	draw_circle(center, radius, color)
-	draw_string(arial, center-Vector2(arial.get_size()/3, -arial.get_size()/3), label)
+	draw_string(arial, center-arialshift, label)
 	

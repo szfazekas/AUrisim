@@ -158,14 +158,13 @@ func getBonds(preBonds):
 	
 
 func addBead():
-	if not(beads.has(newPP)):
-		var nodebead = load('res://bluedot.tscn').instance()
-		nodebead.init(newP, unit*0.2, get_parent().gui.btSelect.get_selected_id())
-		nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
-		nodebead.z_index = -1
-		add_child(nodebead)
-		beads[newPP] = get_parent().gui.btSelect.get_selected_id()
-		#print(nodebead.name, beads)
+	var nodebead = load('res://bluedot.tscn').instance()
+	nodebead.init(newP, unit*0.2, get_parent().gui.btSelect.get_selected_id())
+	nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
+	nodebead.z_index = -1
+	add_child(nodebead)
+	beads[newPP] = get_parent().gui.btSelect.get_selected_id()
+	#print(nodebead.name, beads)
 	
 
 func delBead():
@@ -213,7 +212,8 @@ func _unhandled_input(event):
 					if not(get_parent().gui.delBtn.pressed):
 						oldP = newP
 						newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
-						addBead()
+						if not(beads.has(newPP)):
+							addBead()
 						
 						if (get_parent().gui.folBtn.pressed) and ((newPP-oldPP) in neighborhood):
 							addEdge()
@@ -273,7 +273,7 @@ func _ready():
 #	pass
 
 func _draw():
-	arial.set_size(30)
+	arial.set_size(unit/3)
 	#draw_string(arial, center, '2345fdfdsa', Color(255,255,255))
 	var tx = shear.xform(Vector2(unit,0))
 	var ty = shear.xform(Vector2(0,unit))
