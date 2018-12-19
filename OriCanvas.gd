@@ -19,7 +19,7 @@ var angle_from = 75
 var angle_to = 195
 var center = Vector2(200, 200)
 var radius = 5
-var color = Color(0.3, 0.5, 0.5)
+var color = Color(0.3, 0.5, 0.5, 0.5)
 var newb = 200
 
 var unit = 100
@@ -160,9 +160,9 @@ func getBonds(preBonds):
 func addBead():
 	if not(beads.has(newPP)):
 		var nodebead = load('res://bluedot.tscn').instance()
-		nodebead.init(newP, unit*0.2, str(get_parent().gui.btSelect.get_selected_id()))
+		nodebead.init(newP, unit*0.2, get_parent().gui.btSelect.get_selected_id())
 		nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
-		nodebead.z_index = 2
+		nodebead.z_index = -1
 		add_child(nodebead)
 		beads[newPP] = get_parent().gui.btSelect.get_selected_id()
 		#print(nodebead.name, beads)
@@ -186,7 +186,7 @@ func addEdge():
 	var nodetrans = load('res://transcript.tscn').instance()
 	nodetrans.init(oldP, newP)
 	nodetrans.name = "trans "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
-	nodetrans.z_index = 1
+	nodetrans.z_index = -2
 	print(nodetrans.name)
 	add_child(nodetrans)
 
@@ -195,7 +195,7 @@ func addBond():
 	var nodetrans = load('res://bond.tscn').instance()
 	nodetrans.init(oldP, newP)
 	nodetrans.name = "bond "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
-	nodetrans.z_index = 0
+	nodetrans.z_index = -3
 	print(nodetrans.name)
 	add_child(nodetrans)
 
