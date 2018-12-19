@@ -9,7 +9,7 @@ const neighborhood = [Vector2(1,0), Vector2(1,1), Vector2(0,1), Vector2(-1,0), V
 
 var arial = load('res://arial.tres')
 
-var delta = 3
+var delta = 2
 var arity = 2
 var sigma = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 var transcript = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
@@ -133,15 +133,39 @@ func genCart(sets):
 	return cart
 
 
-
-func filterSupArity(preBonds, elongs):
-	var tmp = generateComb()
-	for i in elongs:
-		for j in i:
-			for k in bondCombos:
-				for l in k:
-					preBonds[j+neighborhood[l]] += 1
-	pass
+# given pre-existing bond info prebonds and a path, return all bond sequences per bead of path, which are not self-contradictory
+func filterSupArity(preBonds, path):
+	var tmp = [] 
+	var strength = 0
+	var tmpEnv 
+	
+	for i in range(arity+1):
+		tmp += genCombSet(neighborhood, i)
+	tmp = genCartPower(tmp, delta)
+	
+	var throw = false
+	var tmpBonds = []
+	for bondset in tmp:
+		tmpEnv = preBonds.duplicate()
+		strength = 0
+		throw = false
+		for bead in range(delta):
+			for dir in bondset[bead]:
+				strength += 1
+				if throw or (bead > 0 and path[bead+1]+dir == path[bead]):
+					throw = true
+				elif tmpEnv.has(path[bead]+dir):
+					tmpEnv[path[bead]+dir] += 1
+				else:
+					tmpEnv[path[bead]+dir] = 0
+		if not(throw):
+			tmpBonds.append([strength, bondset, tmpEnv])
+	var index = 0
+	for i in range(len(tmpBonds)):
+		if tmpBonds[i][0] > tmpBonds[index][0]:
+			index = i
+	print(tmpBonds[index])
+	return tmpBonds	
 
 
 
@@ -260,6 +284,9 @@ func _ready():
 	var tmpBonds = {}
 	#print(genCombSet(neighborhood,0))
 	var tmp = genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)
+	
+	
+	filterSupArity({}, [Vector2(0,0), Vector2(1,0), Vector2(1,-1), Vector2(0,-1)])
 	print(len(genCartPower(tmp,delta)))
 	print(len(genCart([genCombSet(neighborhood,2) + genCombSet(neighborhood,1) + genCombSet(neighborhood,0),genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)])))
 	#print(bondCombos)
