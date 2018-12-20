@@ -15,9 +15,10 @@ use_filter = false
 font_data = ExtResource( 6 )
 _sections_unfolded = [ "Font", "Settings" ]
 
-[node name="OriSim" type="Node2D" index="0"]
+[node name="OriSim" type="Node2D"]
 
 script = ExtResource( 1 )
+_sections_unfolded = [ "Material", "Pause", "Transform", "Visibility", "Z Index" ]
 
 [node name="OriCanvas" parent="." index="0" instance=ExtResource( 2 )]
 

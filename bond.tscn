@@ -5,7 +5,7 @@
 [node name="bond" type="Line2D"]
 
 points = PoolVector2Array( 0, 0, 0, 0 )
-width = 10.0
+width = 6.0
 default_color = Color( 1, 0.392157, 0.0392157, 1 )
 texture_mode = 45
 sharp_limit = 2.0

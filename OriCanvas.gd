@@ -71,7 +71,7 @@ func decrease(list, index):
 
 
 
-# generate all combinations n choose k
+# generate all combinations n choose k, non-recursively
 func genComb(n, k):
 	if n < k or k < 0:
 		return []
@@ -95,7 +95,7 @@ func genComb(n, k):
 	return combos
 
 
-# generate all combinations of k elements from set
+# generate all combinations of k elements from set, using genComb(|set|, k) above
 func genCombSet(set,k):
 	var tmp = genComb(len(set), k)
 	var combos = []
@@ -108,7 +108,7 @@ func genCombSet(set,k):
 	return combos 
 
 
-# generate Cartesian power k of set
+# generate Cartesian power k of set, recursively
 func genCartPower(set, k):
 	var cart = []
 	if set == [] or k == 0:
@@ -120,7 +120,7 @@ func genCartPower(set, k):
 	return cart
 
 
-# generate Cartesian product of sets
+# generate Cartesian product of sets, recursively
 func genCart(sets):
 	var cart = []
 	if sets == [] or sets.has([]):
@@ -133,7 +133,7 @@ func genCart(sets):
 	return cart
 
 
-# given pre-existing bond info prebonds and a path, return all bond sequences per bead of path, which are not self-contradictory
+# given pre-existing bond info prebonds and a path, return all beadwise bond sequences for this path, which are not self-contradictory
 func filterSupArity(preBonds, path):
 	var tmp = [] 
 	var strength = 0
@@ -151,13 +151,13 @@ func filterSupArity(preBonds, path):
 		throw = false
 		for bead in range(delta):
 			for dir in bondset[bead]:
+				if not(tmpEnv.has(path[bead]+dir)):
+					tmpEnv[path[bead]+dir] = [[],[]]
 				strength += 1
 				if throw or (bead > 0 and path[bead+1]+dir == path[bead]):
 					throw = true
 				elif tmpEnv.has(path[bead]+dir):
-					tmpEnv[path[bead]+dir] += 1
-				else:
-					tmpEnv[path[bead]+dir] = 0
+					tmpEnv[path[bead]+dir][1].append(-dir)
 		if not(throw):
 			tmpBonds.append([strength, bondset, tmpEnv])
 	var index = 0
@@ -301,9 +301,11 @@ func _ready():
 
 func _draw():
 	arial.set_size(unit/3)
-	#draw_string(arial, center, '2345fdfdsa', Color(255,255,255))
+	
 	var tx = shear.xform(Vector2(unit,0))
 	var ty = shear.xform(Vector2(0,unit))
+	
+	# draw cursor: a paralellogram reflecting the shear and a filled circle where the bead is/would be placed
 	draw_line(currentP - tx/2 - ty/2, currentP - tx/2 + ty/2, color)
 	draw_line(currentP - tx/2 + ty/2, currentP + tx/2 + ty/2, color)
 	draw_line(currentP + tx/2 + ty/2, currentP + tx/2 - ty/2, color)

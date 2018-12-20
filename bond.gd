@@ -10,11 +10,11 @@ func _ready():
 	pass
 
 func init(from, to):
-	self.points[0] = from + (to-from)/3
+	self.points[0] = from + (to-from)/4
 	#self.points[1] = (to-from)/2
 	#self.points[2] = (to-from)/3
 	
-	self.points[1] = to - (to-from)/3
+	self.points[1] = to - (to-from)/4
 
 
 #func _process(delta):
