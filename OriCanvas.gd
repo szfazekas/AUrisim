@@ -41,6 +41,7 @@ var bonds = []
 var bondCombos								# from 6 directions choose at most arity many, all possible combinations
 var PossibleBonds = []						# all possible elongations on an empty grid, which are arity-valid and not self-intersecting 
 
+var overBead = false
 var pressed = false
 var startdrag = Vector2(0,0)
 var enddrag = Vector2(0,0)
@@ -151,8 +152,7 @@ func filterSupArity(preBonds, path):
 		throw = false
 		for bead in range(delta):
 			for dir in bondset[bead]:
-				if not(tmpEnv.has(path[bead]+dir)):
-					tmpEnv[path[bead]+dir] = [[],[]]
+				tmpEnv[path[bead]] = [[],[]]
 				strength += 1
 				if throw or (bead > 0 and path[bead+1]+dir == path[bead]):
 					throw = true
@@ -223,31 +223,42 @@ func addBond():
 	add_child(nodetrans)
 
 func _unhandled_input(event):
+	var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
+	#var t = get_transform().affine_inverse().xform(shear.affine_inverse().xform(event.position))
+	if shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit)).distance_to(shear.xform(t)) < unit*0.3:
+		overBead = true
+	else:
+		overBead = false
 	if event is InputEventMouseButton:
 		if event.button_index == BUTTON_LEFT:
 			if event.pressed:
 				if event.doubleclick:
-					var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
-					
-					oldPP = newPP
-					newPP.x = int(round(t.x/unit))
-					newPP.y = int(round(t.y/unit))
-					
-					if not(get_parent().gui.delBtn.pressed):
-						oldP = newP
-						newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
-						if not(beads.has(newPP)):
-							addBead()
+					if overBead:
+						#var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
+						oldPP = newPP
+						newPP.x = int(round(t.x/unit))
+						newPP.y = int(round(t.y/unit))
 						
-						if (get_parent().gui.folBtn.pressed) and ((newPP-oldPP) in neighborhood):
-							addEdge()
-						elif (get_parent().gui.bondBtn.pressed) and ((newPP-oldPP) in neighborhood):
-							addBond()
-						elif (get_parent().gui.foldBtn.pressed):
-							generateDeltaPath(newPP, [1,1,1])
-							print(genCombSet([1,2,3,4],3))
-					else:
-						delBead()
+							
+						
+						if not(get_parent().gui.delBtn.pressed):
+							oldP = newP
+							newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
+							if not(beads.has(newPP)):
+								addBead()
+							elif not(get_parent().gui.bondBtn.pressed):
+								delBead()
+								addBead()
+							
+							if (get_parent().gui.folBtn.pressed) and ((newPP-oldPP) in neighborhood):
+								addEdge()
+							elif (get_parent().gui.bondBtn.pressed) and ((newPP-oldPP) in neighborhood):
+								addBond()
+							elif (get_parent().gui.foldBtn.pressed):
+								generateDeltaPath(newPP, [1,1,1])
+								print(genCombSet([1,2,3,4],3))
+						else:
+							delBead()
 					
 				else:
 					pressed = true
@@ -256,22 +267,22 @@ func _unhandled_input(event):
 				pressed = false
 				
 		elif event.button_index == BUTTON_WHEEL_UP:
-			var t = get_transform()
-			self.transform = Transform2D(t.x*1.02, t.y*1.02, t.origin)
+			var tr = get_transform()
+			self.transform = Transform2D(tr.x*1.02, tr.y*1.02, tr.origin)
 			
 		elif event.button_index == BUTTON_WHEEL_DOWN:
-			var t = get_transform()
-			self.transform = Transform2D(t.x*0.98, t.y*0.98, t.origin)
+			var tr = get_transform()
+			self.transform = Transform2D(tr.x*0.98, tr.y*0.98, tr.origin)
 	
 	if event is InputEventMouseMotion:
 		if pressed:
 			enddrag = event.position
-			var t = get_transform()
-			self.transform = Transform2D(t.x, t.y, enddrag - startdrag + t.origin)
+			var tr = get_transform()
+			self.transform = Transform2D(tr.x, tr.y, enddrag - startdrag + tr.origin)
 			startdrag = enddrag
 		else:
 			pressed = false
-			var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
+			#var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
 			currentP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 	update()
 	#get_tree().set_input_as_handled()
@@ -306,9 +317,10 @@ func _draw():
 	var ty = shear.xform(Vector2(0,unit))
 	
 	# draw cursor: a paralellogram reflecting the shear and a filled circle where the bead is/would be placed
-	draw_line(currentP - tx/2 - ty/2, currentP - tx/2 + ty/2, color)
-	draw_line(currentP - tx/2 + ty/2, currentP + tx/2 + ty/2, color)
-	draw_line(currentP + tx/2 + ty/2, currentP + tx/2 - ty/2, color)
-	draw_line(currentP + tx/2 - ty/2, currentP - tx/2 - ty/2, color)
 	
-	draw_circle(currentP, unit/4, color)
+	#draw_line(currentP - tx/2 - ty/2, currentP - tx/2 + ty/2, color)
+	#draw_line(currentP - tx/2 + ty/2, currentP + tx/2 + ty/2, color)
+	#draw_line(currentP + tx/2 + ty/2, currentP + tx/2 - ty/2, color)
+	#draw_line(currentP + tx/2 - ty/2, currentP - tx/2 - ty/2, color)
+	if overBead:
+		draw_circle(currentP, unit/4, color)
