@@ -11,12 +11,18 @@ func _ready():
 
 func init(from, to):
 	self.points[0] = from + (to-from)/4
-	#self.points[1] = (to-from)/2
-	#self.points[2] = (to-from)/3
-	
 	self.points[1] = to - (to-from)/4
 
 
+func initZig(from, to):
+	width = 4
+	points[0] = from + (to-from)/4
+	points[1] = from + ((to-from)/2.5).rotated(PI/24)
+	add_point(to - ((to-from)/2.5).rotated(PI/24))
+	add_point(to - (to-from)/4)
+	#self.points[0] = from + (to-from)/4
+	
+	
 #func _process(delta):
 #	# Called every frame. Delta is time since last frame.
 #	# Update game logic here.
