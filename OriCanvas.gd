@@ -36,6 +36,7 @@ var newPP = Vector2(0,0)
 var beads = {}
 var paths = []
 var bonds = []
+var rules = {}
 
 
 var bondCombos								# from 6 directions choose at most arity many, all possible combinations
@@ -60,7 +61,7 @@ func generateDeltaPath(start, trans):
 				if not(beads.has(j[-1]+dir) or j.has(j[-1]+dir)):
 					prolong[i][j[-1]+dir] = trans[i]
 					dpath[i+1].append(j+[j[-1]+dir]) 
-	print(dpath[-1])
+	#print(dpath[-1])
 	return dpath[-1]
 
 
@@ -151,31 +152,34 @@ func filterSupArity(preBonds, path):
 	var throw = false
 	# tmpBonds <- valid bond sequences
 	var tmpBonds = []
+	
 	# for each possible bond sequence
 	for bondset in tmp:
 		# tmpEnv <- surrounding beads
 		tmpEnv = preBonds.duplicate()
+		for bead in range(delta):
+			tmpEnv[path[bead+1]] = []
 		strength = 0
 		throw = false
 		# for each bead in the path
 		for bead in range(0,delta):
-			tmpEnv[path[bead+1]] = []
+			#tmpEnv[path[bead+1]] = []
 			# for each bond in the current bead's bonds
 			if not(throw):
 				for dir in bondset[bead]:
-					tmpEnv[path[bead+1]].append(dir)
-					# if the we have not processed the bead where the current bead wants to bind, then add 1 to strength for the new bond
+					tmpEnv[path[bead+1]].append(path[bead+1]+dir)
+					# if the current bead wants to bind to something not in the present path, then add 1 to strength for the new bond
 					if not(tmpEnv.has(path[bead+1]+dir)):
 						strength += 1
 					# otherwise, check if the bonding partner has a correspoonding bond and throw away bond sequence if not
-					elif not(tmpEnv[path[bead+1]+dir].has(-dir)):
+					elif not(tmpEnv[path[bead+1]+dir].has(path[bead+1])):
 						throw = true
-					if throw or (bead > 0 and path[bead+1]+dir == path[bead]):
+					if throw or path[bead+1]+dir == path[bead]:
 						throw = true
 					#elif tmpEnv.has(path[bead]+dir):
 					#	tmpEnv[path[bead]+dir].append(-dir)
 		if not(throw):
-			tmpBonds.append([strength, bondset, tmpEnv])
+			tmpBonds.append([strength, tmpEnv])
 	var index = 0
 	for i in range(len(tmpBonds)):
 		if tmpBonds[i][0] > tmpBonds[index][0]:
@@ -184,6 +188,29 @@ func filterSupArity(preBonds, path):
 	tmpBonds.sort_custom(self, "elongComp")
 	return tmpBonds
 
+# check if an elongation is compatible with bonding ruleset and surrounding beads
+func checkElong(preBeads, path, elong, trans):
+	var tmpBeads = preBeads.duplicate()
+	var valid = true
+	#var path = elong[0]
+	var bondseq = elong[1]
+	#print(bondseq)
+	#print(rules)
+	for bead in range(1,len(path)):
+		tmpBeads[path[bead]] = [trans[bead], []]
+	#print(path, " -- ", tmpBeads)
+	#for bondseq in elong:
+	#valid = true
+	for bead in range(1,len(path)):
+		for bond in bondseq[path[bead]]:
+			if not(tmpBeads.has(bond)):
+				#print(tmpBeads.has(bond), " --- ", bond, " --- ", rules[tmpBeads[path[bead]][0]], " --- ", tmpBeads[bond][0])
+				#print("#\n")
+				#print(tmpBeads, " --- ", path, " --- ", bond, "\n")
+				valid = false
+			elif not(rules[tmpBeads[path[bead]][0]].has(tmpBeads[bond][0])):
+				valid = false
+	return valid
 
 # compare strength of bond sequences a and b
 func elongComp(a, b):
@@ -193,12 +220,26 @@ func elongComp(a, b):
 		return false
 
 
-func filterElongSet(eSet):
+func filterElongSet(eSet, trans):
 	var tmp = [[0,'nothing']]
+	var tmp2 = []
+	var maxbond = 0
+	var solution = []
+	print(beads)
 	for path in eSet:
-		print(path)
-		tmp.append([path]+filterSupArity({}, path))
-		print(path, '\n', tmp[-1][0], tmp[-1][1])
+		#print(path)
+		tmp2 = filterSupArity({}, path)
+		for bondseq in tmp2:
+			if checkElong(beads, path, bondseq, trans):
+				if bondseq[0] > maxbond:
+					maxbond = bondseq[0]
+					solution = [[path,bondseq]]
+				elif bondseq[0] == maxbond:
+					solution.append([path, bondseq])
+	if len(solution)>1:
+		print("Nondeterministic")
+	else:
+		print(solution)
 
 
 func getBonds(preBonds):
@@ -219,7 +260,7 @@ func addBead():
 	nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
 	nodebead.z_index = -1
 	add_child(nodebead)
-	beads[newPP] = get_parent().gui.btSelect.get_selected_id()
+	beads[newPP] = [get_parent().gui.btSelect.get_selected_id(),[]]
 	#print(nodebead.name, beads)
 	
 
@@ -249,9 +290,12 @@ func addEdge():
 func addBond():
 	var nodetrans = load('res://bond.tscn').instance()
 	nodetrans.initZig(oldP, newP)
+	beads[oldPP][1].append(newPP)
+	beads[newPP][1].append(oldPP)
 	nodetrans.name = "bond "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
 	nodetrans.z_index = -3
 	print(nodetrans.name)
+	print(beads)
 	add_child(nodetrans)
 
 func _unhandled_input(event):
@@ -289,7 +333,7 @@ func _unhandled_input(event):
 								addBond()
 								
 							elif (get_parent().gui.foldBtn.pressed):
-								filterElongSet(generateDeltaPath(newPP, [1,1,1]))
+								filterElongSet(generateDeltaPath(newPP, ["1","1","2"]), ["1","1","2"])
 								
 						else:
 							delBead()
@@ -329,7 +373,9 @@ func _ready():
 	var tmpBonds = {}
 	#print(genCombSet(neighborhood,0))
 	var tmp = genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)
-	
+	rules["0"] = ["0"]
+	rules["1"] = ["1", "2"]
+	rules["2"] = ["1", "2"]
 	
 	#filterSupArity({}, [Vector2(0,0), Vector2(1,0), Vector2(1,-1), Vector2(0,-1)])
 	print(len(genCartPower(tmp,delta)))
