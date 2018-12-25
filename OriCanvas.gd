@@ -34,6 +34,7 @@ var newPP = Vector2(0,0)
 
 
 var beads = {}
+var BeadObjects = {}
 var paths = []
 var bonds = []
 var rules = {}
@@ -188,29 +189,26 @@ func filterSupArity(preBonds, path):
 	tmpBonds.sort_custom(self, "elongComp")
 	return tmpBonds
 
+
 # check if an elongation is compatible with bonding ruleset and surrounding beads
 func checkElong(preBeads, path, elong, trans):
 	var tmpBeads = preBeads.duplicate()
 	var valid = true
-	#var path = elong[0]
 	var bondseq = elong[1]
-	#print(bondseq)
-	#print(rules)
 	for bead in range(1,len(path)):
 		tmpBeads[path[bead]] = [trans[bead], []]
-	#print(path, " -- ", tmpBeads)
-	#for bondseq in elong:
-	#valid = true
 	for bead in range(1,len(path)):
 		for bond in bondseq[path[bead]]:
 			if not(tmpBeads.has(bond)):
-				#print(tmpBeads.has(bond), " --- ", bond, " --- ", rules[tmpBeads[path[bead]][0]], " --- ", tmpBeads[bond][0])
-				#print("#\n")
-				#print(tmpBeads, " --- ", path, " --- ", bond, "\n")
 				valid = false
 			elif not(rules[tmpBeads[path[bead]][0]].has(tmpBeads[bond][0])):
 				valid = false
+			elif len(tmpBeads[bond]) < arity:
+				tmpBeads[bond].append(path[bead])
+			else:
+				valid = false
 	return valid
+
 
 # compare strength of bond sequences a and b
 func elongComp(a, b):
@@ -227,7 +225,6 @@ func filterElongSet(eSet, trans):
 	var solution = []
 	print(beads)
 	for path in eSet:
-		#print(path)
 		tmp2 = filterSupArity({}, path)
 		for bondseq in tmp2:
 			if checkElong(beads, path, bondseq, trans):
@@ -237,22 +234,16 @@ func filterElongSet(eSet, trans):
 				elif bondseq[0] == maxbond:
 					solution.append([path, bondseq])
 	if len(solution)>1:
-		print("Nondeterministic")
+		var currentpos = solution[0][0][1]
+		var currentbonds = solution[0][1][1][currentpos]
+		for bondseq in solution:
+			if bondseq[0][1] != currentpos or bondseq[1][1][bondseq[0][1]] != currentbonds:
+				print("Nondeterministic")
+				return
 	else:
 		print(solution)
 
 
-func getBonds(preBonds):
-	# path has the current path
-	# bonds has all possible bond structures for this path; initially empty
-	var bonds = [[preBonds]]
-	# for each bead in the path
-	#for i in range(len(path)):
-		# for each bond structure with fewer beads
-		#for j in bonds[i]:
-		#set arity+1 many lists
-	pass
-	
 
 func addBead():
 	var nodebead = load('res://bluedot.tscn').instance()
@@ -261,8 +252,9 @@ func addBead():
 	nodebead.z_index = -1
 	add_child(nodebead)
 	beads[newPP] = [get_parent().gui.btSelect.get_selected_id(),[]]
-	#print(nodebead.name, beads)
-	
+	BeadObjects[newPP] = nodebead
+
+
 
 func delBead():
 	var lt = get_children()
@@ -271,36 +263,42 @@ func delBead():
 	for i in lt:
 		if i.name == 'bead_'+str(newPP.x)+'_'+str(newPP.y):
 			tmp = i
-
 	if tmp != null:
 		self.remove_child(tmp)
 		tmp.free()
 		beads.erase(newPP)
-	
-	
+		BeadObjects.erase(newPP)
+
+
+
 func addEdge():
 	var nodetrans = load('res://transcript.tscn').instance()
 	nodetrans.init(oldP, newP)
 	nodetrans.name = "trans "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
 	nodetrans.z_index = -2
+	BeadObjects[oldPP].next = newPP
+	BeadObjects[newPP].previous = oldPP
 	print(nodetrans.name)
 	add_child(nodetrans)
+
 
 
 func addBond():
-	var nodetrans = load('res://bond.tscn').instance()
-	nodetrans.initZig(oldP, newP)
-	beads[oldPP][1].append(newPP)
-	beads[newPP][1].append(oldPP)
-	nodetrans.name = "bond "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
-	nodetrans.z_index = -3
-	print(nodetrans.name)
-	print(beads)
-	add_child(nodetrans)
+	if BeadObjects[oldPP].next != newPP and BeadObjects[oldPP].previous != newPP:
+		var nodetrans = load('res://bond.tscn').instance()
+		nodetrans.initZig(oldP, newP)
+		beads[oldPP][1].append(newPP)
+		beads[newPP][1].append(oldPP)
+		nodetrans.name = "bond "+str(oldPP.x)+","+str(oldPP.y)+"->"+str(newPP.x)+","+str(newPP.y)
+		nodetrans.z_index = -3
+		print(nodetrans.name)
+		print(beads)
+		add_child(nodetrans)
+
+
 
 func _unhandled_input(event):
 	var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
-	#var t = get_transform().affine_inverse().xform(shear.affine_inverse().xform(event.position))
 	if shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit)).distance_to(shear.xform(t)) < unit*0.3:
 		overBead = true
 	else:
@@ -310,12 +308,9 @@ func _unhandled_input(event):
 			if event.pressed:
 				if event.doubleclick:
 					if overBead:
-						#var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
 						oldPP = newPP
 						newPP.x = int(round(t.x/unit))
 						newPP.y = int(round(t.y/unit))
-						
-							
 						
 						if not(get_parent().gui.delBtn.pressed):
 							oldP = newP
@@ -360,10 +355,10 @@ func _unhandled_input(event):
 			startdrag = enddrag
 		else:
 			pressed = false
-			#var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
 			currentP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 	update()
 	#get_tree().set_input_as_handled()
+
 
 
 func _ready():
@@ -389,6 +384,7 @@ func _ready():
 #	# Called every frame. Delta is time since last frame.
 #	# Update game logic here.
 #	pass
+
 
 func _draw():
 	arial.set_size(unit/3)

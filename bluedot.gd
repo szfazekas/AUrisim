@@ -17,6 +17,11 @@ var enddrag = Vector2(0,0)
 var arial = load('res://arial.tres')
 var arialshift = Vector2(arial.get_ascent()/3.5, -arial.get_ascent()/2.5)
 
+var previous = null
+var next = null
+
+
+
 func init(pos, r, l):
 	center = pos
 	radius = r
