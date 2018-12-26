@@ -38,7 +38,7 @@ var BeadObjects = {}
 var paths = []
 var bonds = []
 var rules = {}
-
+var grid = {}
 
 var bondCombos								# from 6 directions choose at most arity many, all possible combinations
 var PossibleBonds = []						# all possible elongations on an empty grid, which are arity-valid and not self-intersecting 
@@ -49,6 +49,17 @@ var startdrag = Vector2(0,0)
 var enddrag = Vector2(0,0)
 
 
+
+func addToGrid(pos, gridPos):
+	var nodepoint
+	for dir in neighborhood+[Vector2(0,0)]:
+		if not(gridPos + dir in grid):
+			grid[gridPos + dir] = 1
+			nodepoint = load('res://GridPoint.tscn').instance()
+			add_child(nodepoint)
+			nodepoint.init(shear.xform((gridPos+dir)*unit))
+			nodepoint.z_index = -2
+			
 
 # generate all non-intersecting paths of length delta, which are consistent with beads[], starting from start
 func generateDeltaPath(start, trans):
@@ -223,7 +234,7 @@ func filterElongSet(eSet, trans):
 	var tmp2 = []
 	var maxbond = 0
 	var solution = []
-	print(beads)
+	#print(beads)
 	for path in eSet:
 		tmp2 = filterSupArity({}, path)
 		for bondseq in tmp2:
@@ -239,13 +250,47 @@ func filterElongSet(eSet, trans):
 		for bondseq in solution:
 			if bondseq[0][1] != currentpos or bondseq[1][1][bondseq[0][1]] != currentbonds:
 				print("Nondeterministic")
-				return
+				print(solution)
+				return null
+		return solution[0]
 	else:
-		print(solution)
+		return solution[0]
 
+
+
+func fold(pos, trans):
+	var hang = []
+	var currentpos = pos
+	var solution = []
+	for i in range(delta+1):
+		hang.append(trans[i])
+	var i = delta+1
+	while i < len(trans)-1:
+		solution = filterElongSet(generateDeltaPath(currentpos, hang), hang)
+		if solution != null:
+			currentpos = solution[0][1]
+			addBeadF(currentpos)
+			hang.pop_front()
+			hang.append(trans[i])
+		else:
+			print("Stopped folding")
+			return
+
+
+func addBeadF(pos):
+	var canvpos = shear.xform(pos*unit)
+	addToGrid(canvpos, pos)
+	var nodebead = load('res://bluedot.tscn').instance()
+	nodebead.init(canvpos, unit*0.2, get_parent().gui.btSelect.get_selected_id())
+	nodebead.name = 'bead_'+str(pos.x)+'_'+str(pos.y)
+	nodebead.z_index = -1
+	add_child(nodebead)
+	beads[pos] = [get_parent().gui.btSelect.get_selected_id(),[]]
+	BeadObjects[pos] = nodebead
 
 
 func addBead():
+	addToGrid(newP, newPP)
 	var nodebead = load('res://bluedot.tscn').instance()
 	nodebead.init(newP, unit*0.2, get_parent().gui.btSelect.get_selected_id())
 	nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
@@ -298,6 +343,8 @@ func addBond():
 
 
 func _unhandled_input(event):
+	if event is InputEventKey:
+		return
 	var t = shear.affine_inverse().xform(get_transform().affine_inverse().xform(event.position))
 	if shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit)).distance_to(shear.xform(t)) < unit*0.3:
 		overBead = true
@@ -315,20 +362,23 @@ func _unhandled_input(event):
 						if not(get_parent().gui.delBtn.pressed):
 							oldP = newP
 							newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
-							if not(beads.has(newPP)):
-								addBead()
-							elif not(get_parent().gui.bondBtn.pressed):
-								delBead()
-								addBead()
-							
-							if (get_parent().gui.folBtn.pressed) and ((newPP-oldPP) in neighborhood):
-								addEdge()
+							if (get_parent().gui.foldBtn.pressed):
+								fold(newPP, get_parent().gui.transcript.text)
+							else:
+								if not(beads.has(newPP)):
+									addBead()
+								elif not(get_parent().gui.bondBtn.pressed):
+									delBead()
+									addBead()
 								
-							elif (get_parent().gui.bondBtn.pressed) and ((newPP-oldPP) in neighborhood):
-								addBond()
+								if (get_parent().gui.folBtn.pressed) and ((newPP-oldPP) in neighborhood):
+									addEdge()
+									
+								elif (get_parent().gui.bondBtn.pressed) and ((newPP-oldPP) in neighborhood):
+									addBond()
 								
-							elif (get_parent().gui.foldBtn.pressed):
-								filterElongSet(generateDeltaPath(newPP, ["1","1","2"]), ["1","1","2"])
+#							elif (get_parent().gui.foldBtn.pressed):
+#								filterElongSet(generateDeltaPath(newPP, ["1","1","2"]), ["1","1","2"])
 								
 						else:
 							delBead()
@@ -369,9 +419,9 @@ func _ready():
 	#print(genCombSet(neighborhood,0))
 	var tmp = genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)
 	rules["0"] = ["0"]
-	rules["1"] = ["1", "2"]
-	rules["2"] = ["1", "2"]
-	
+	rules["1"] = ["1"]
+	rules["2"] = ["2"]
+	addToGrid(Vector2(0,0), Vector2(0,0))
 	#filterSupArity({}, [Vector2(0,0), Vector2(1,0), Vector2(1,-1), Vector2(0,-1)])
 	print(len(genCartPower(tmp,delta)))
 	print(len(genCart([genCombSet(neighborhood,2) + genCombSet(neighborhood,1) + genCombSet(neighborhood,0),genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)])))
