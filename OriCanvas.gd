@@ -196,6 +196,7 @@ func filterSupArity(preBonds, path):
 	for i in range(len(tmpBonds)):
 		if tmpBonds[i][0] > tmpBonds[index][0]:
 			index = i
+	print(tmpBonds[index][0])
 	# return the list of bond sequences sorted by strength
 	tmpBonds.sort_custom(self, "elongComp")
 	return tmpBonds
@@ -250,7 +251,7 @@ func filterElongSet(eSet, trans):
 		for bondseq in solution:
 			if bondseq[0][1] != currentpos or bondseq[1][1][bondseq[0][1]] != currentbonds:
 				print("Nondeterministic")
-				print(solution)
+				#print(solution)
 				return null
 		return solution[0]
 	else:
@@ -382,7 +383,7 @@ func _unhandled_input(event):
 							oldP = newP
 							newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 							if (get_parent().gui.foldBtn.pressed):
-								fold(newPP, get_parent().gui.transcript.text)
+								fold(newPP, ["1", "1", "1", "1", "1", "1", "1"])#get_parent().gui.transcript.text)
 							else:
 								if not(beads.has(newPP)):
 									addBead()
