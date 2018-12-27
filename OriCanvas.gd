@@ -196,10 +196,70 @@ func filterSupArity(preBonds, path):
 	for i in range(len(tmpBonds)):
 		if tmpBonds[i][0] > tmpBonds[index][0]:
 			index = i
-	print(tmpBonds[index][0])
+	#print(tmpBonds)
 	# return the list of bond sequences sorted by strength
 	tmpBonds.sort_custom(self, "elongComp")
 	return tmpBonds
+
+
+
+func filterElongs(preBonds, path):
+	var tmp = [] 
+	var strength = 0
+	var tmpEnv = {}
+	var returnEnv = {}
+	
+	# tmp <- all possible combinations of maximum arity many bonds for one bead
+	for i in range(arity+1):
+		tmp += genCombSet(neighborhood, i)
+	# tmp <- all sequences of length delta of bond combinations
+	tmp = genCartPower(tmp, delta)
+	# if true, throw away bond sequence, because it is invalid
+	var throw = false
+	# tmpBonds <- valid bond sequences
+	var tmpBonds = []
+	
+	# for each possible bond sequence
+	for bondset in tmp:
+		# tmpEnv <- surrounding beads
+		strength = 0
+		tmpEnv = preBonds.duplicate()
+		for bead in range(delta):
+			tmpEnv[path[bead+1]] = []
+			returnEnv[path[bead+1]] = []
+			for i in bondset[bead]:
+				tmpEnv[path[bead+1]].append(path[bead+1] + i)
+				returnEnv[path[bead+1]].append(path[bead+1] + i)
+			strength += len(bondset[bead])
+		#strength = 0
+		throw = false
+		# for each bead in the path
+		for bead in range(delta):
+			#tmpEnv[path[bead+1]] = []
+			# for each bond in the current bead's bonds
+			if not(throw):
+				for dir in bondset[bead]:
+					
+					# if the current bead wants to bind to something not in the present path, then add 1 to strength for the new bond
+					if path.has(path[bead+1]+dir) and not(tmpEnv[path[bead+1]+dir].has(path[bead+1])):
+						throw = true
+					if path[bead+1]+dir == path[bead]:
+						throw = true
+					#elif tmpEnv.has(path[bead]+dir):
+					#	tmpEnv[path[bead]+dir].append(-dir)
+		if not(throw):
+			tmpBonds.append([strength, returnEnv.duplicate()])
+	var index = 0
+	for i in range(len(tmpBonds)):
+		if tmpBonds[i][0] > tmpBonds[index][0]:
+			index = i
+	#for i in range(len(tmpBonds)):
+	#	if tmpBonds[i][0] == tmpBonds[index][0]:
+	#		print(tmpBonds[i])
+	# return the list of bond sequences sorted by strength
+	tmpBonds.sort_custom(self, "elongComp")
+	return tmpBonds
+
 
 
 # check if an elongation is compatible with bonding ruleset and surrounding beads
@@ -237,25 +297,34 @@ func filterElongSet(eSet, trans):
 	var solution = []
 	#print(beads)
 	for path in eSet:
-		tmp2 = filterSupArity({}, path)
+		tmp2 = filterElongs(beads, path)
 		for bondseq in tmp2:
 			if checkElong(beads, path, bondseq, trans):
 				if bondseq[0] > maxbond:
+					print(bondseq)
 					maxbond = bondseq[0]
 					solution = [[path,bondseq]]
 				elif bondseq[0] == maxbond:
+					#print(bondseq[1])
 					solution.append([path, bondseq])
-	if len(solution)>1:
+	if len(solution) > 1:
+		print("multiple")
 		var currentpos = solution[0][0][1]
 		var currentbonds = solution[0][1][1][currentpos]
 		for bondseq in solution:
+			bondseq[1][1][bondseq[0][1]].sort()
+			currentbonds.sort()
 			if bondseq[0][1] != currentpos or bondseq[1][1][bondseq[0][1]] != currentbonds:
 				print("Nondeterministic")
 				#print(solution)
 				return null
 		return solution[0]
-	else:
+	elif len(solution) == 1:
+		print("single")
 		return solution[0]
+	else:
+		print("no path...")
+		return null
 
 
 
