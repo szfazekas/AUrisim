@@ -196,6 +196,7 @@ func filterSupArity(preBonds, path):
 	for i in range(len(tmpBonds)):
 		if tmpBonds[i][0] > tmpBonds[index][0]:
 			index = i
+	print(tmpBonds[index][0])
 	# return the list of bond sequences sorted by strength
 	tmpBonds.sort_custom(self, "elongComp")
 	return tmpBonds
@@ -250,7 +251,7 @@ func filterElongSet(eSet, trans):
 		for bondseq in solution:
 			if bondseq[0][1] != currentpos or bondseq[1][1][bondseq[0][1]] != currentbonds:
 				print("Nondeterministic")
-				print(solution)
+				#print(solution)
 				return null
 		return solution[0]
 	else:
@@ -261,32 +262,51 @@ func filterElongSet(eSet, trans):
 func fold(pos, trans):
 	var hang = []
 	var currentpos = pos
+	var oldpos = pos
 	var solution = []
 	for i in range(delta+1):
 		hang.append(trans[i])
-	var i = delta+1
-	while i < len(trans)-1:
+	var i = 1
+	while i < len(trans)-delta:
 		solution = filterElongSet(generateDeltaPath(currentpos, hang), hang)
 		if solution != null:
+			oldpos = currentpos
 			currentpos = solution[0][1]
-			addBeadF(currentpos)
+			addBeadF(currentpos, trans[i], solution[1][1][solution[0][1]])
+			addEdgeF(oldpos, currentpos)
 			hang.pop_front()
-			hang.append(trans[i])
+			hang.append(trans[i+delta-1])
+			i += 1
 		else:
 			print("Stopped folding")
 			return
 
 
-func addBeadF(pos):
+func addBeadF(pos, type, bonds):
 	var canvpos = shear.xform(pos*unit)
 	addToGrid(canvpos, pos)
 	var nodebead = load('res://bluedot.tscn').instance()
-	nodebead.init(canvpos, unit*0.2, get_parent().gui.btSelect.get_selected_id())
+	nodebead.init(canvpos, unit*0.2, type)
 	nodebead.name = 'bead_'+str(pos.x)+'_'+str(pos.y)
 	nodebead.z_index = -1
 	add_child(nodebead)
-	beads[pos] = [get_parent().gui.btSelect.get_selected_id(),[]]
+	beads[pos] = [type,bonds]
+	for i in bonds:
+		beads[i][1].append(pos)
 	BeadObjects[pos] = nodebead
+
+
+func addEdgeF(from, to):
+	var nodetrans = load('res://transcript.tscn').instance()
+	var canvfrom = shear.xform(from*unit)
+	var canvto = shear.xform(to*unit)
+	nodetrans.init(canvfrom, canvto)
+	nodetrans.name = "trans "+str(from.x)+","+str(from.y)+"->"+str(to.x)+","+str(to.y)
+	nodetrans.z_index = -2
+	BeadObjects[from].next = to
+	BeadObjects[to].previous = from
+	print(nodetrans.name)
+	add_child(nodetrans)
 
 
 func addBead():
@@ -363,7 +383,7 @@ func _unhandled_input(event):
 							oldP = newP
 							newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 							if (get_parent().gui.foldBtn.pressed):
-								fold(newPP, get_parent().gui.transcript.text)
+								fold(newPP, ["1", "1", "1", "1", "1", "1", "1"])#get_parent().gui.transcript.text)
 							else:
 								if not(beads.has(newPP)):
 									addBead()
@@ -421,6 +441,8 @@ func _ready():
 	rules["0"] = ["0"]
 	rules["1"] = ["1"]
 	rules["2"] = ["2"]
+	rules["3"] = ["3"]
+	rules["4"] = ["4"]
 	addToGrid(Vector2(0,0), Vector2(0,0))
 	#filterSupArity({}, [Vector2(0,0), Vector2(1,0), Vector2(1,-1), Vector2(0,-1)])
 	print(len(genCartPower(tmp,delta)))
