@@ -49,6 +49,77 @@ var startdrag = Vector2(0,0)
 var enddrag = Vector2(0,0)
 
 
+func valid(path, bondset, sol, index, trans):
+	var tmpBeads = beads.duplicate()
+	for i in range(index+1):
+		tmpBeads[path[i]] = [trans[i],[]]
+		for bond in bondset[sol[i]]:
+			tmpBeads[path[i]][1].append(bond)
+			if tmpBeads.has(path[i]+bond) and not(path[i] in tmpBeads[path[i]+bond][1]):
+				tmpBeads[path[i]+bond][1].append(path[i])
+				if len(tmpBeads[path[i]+bond][1]) > arity:
+					return false
+	for i in range(index+1):
+		for bond in bondset[sol[i]]:
+			if i>0 and path[i] + bond == path[i-1]:
+				return false
+			elif not(beads.has(path[i] + bond)):
+				return false
+			elif not(rules[trans[i]].has(beads[path[i]+bond][0])):
+				return false
+#			elif len(beads[path[i]+bond][1])+len(bondset[sol[i]]) > arity:
+#				value = false
+	return true
+
+func backtrack(path, trans, bondset):
+	var tmp = {}
+	var index = 0
+	var solutions = []
+	var sol = []
+	var bondNo = len(bondset)
+	var strength
+	var maxstrength = 0
+	for i in range(delta):
+		sol.append(-1)
+	while index > -1:
+		if sol[index] < bondNo - 1:
+			sol[index] += 1
+			if valid(path, bondset, sol, index, trans):
+				if index == delta-1:
+					#for i in range(delta):
+					#	for j in bondset[sol[i]]:
+					#		tmp.append()
+					strength = 0
+					for i in sol:
+						strength += len(bondset[i])
+					if strength == maxstrength:
+						solutions.append([strength, sol.duplicate()])
+					elif strength > maxstrength:
+						maxstrength = strength
+						solutions = [[strength, sol.duplicate()]]
+				else:
+					index += 1
+					sol[index] = -1
+		else:
+			index -= 1
+	return [bondset, solutions]
+
+
+func foldNew(pos, trans):
+	var bondset = []
+	for i in range(arity+1):
+		bondset = bondset + genCombSet(neighborhood, i)
+	var tmppath
+	var tmptrans
+	var paths = generateDeltaPath(pos, trans)
+	for path in paths:
+#		tmppath = path.duplicate()
+#		tmppath.pop_front()
+#		tmptrans = trans
+#		tmptrans.remove(0)
+		print(backtrack(tmppath, tmptrans, bondset))
+		
+
 
 func addToGrid(pos, gridPos):
 	var nodepoint
@@ -63,15 +134,15 @@ func addToGrid(pos, gridPos):
 
 # generate all non-intersecting paths of length delta, which are consistent with beads[], starting from start
 func generateDeltaPath(start, trans):
-	var prolong = [{}]
+	#var prolong = [{}]
 	var dpath = [[[start]]]
 	for i in range(delta):
-		prolong.append({})
+		#prolong.append({})
 		dpath.append([])
 		for j in dpath[i]:
 			for dir in neighborhood:
 				if not(beads.has(j[-1]+dir) or j.has(j[-1]+dir)):
-					prolong[i][j[-1]+dir] = trans[i]
+					#prolong[i][j[-1]+dir] = trans[i]
 					dpath[i+1].append(j+[j[-1]+dir]) 
 	#print(dpath[-1])
 	return dpath[-1]
@@ -253,9 +324,9 @@ func filterElongs(preBonds, path):
 	for i in range(len(tmpBonds)):
 		if tmpBonds[i][0] > tmpBonds[index][0]:
 			index = i
-	#for i in range(len(tmpBonds)):
-	#	if tmpBonds[i][0] == tmpBonds[index][0]:
-	#		print(tmpBonds[i])
+#	for i in range(len(tmpBonds)):
+#		if tmpBonds[i][0] >= 3:
+#			print(tmpBonds[i])
 	# return the list of bond sequences sorted by strength
 	tmpBonds.sort_custom(self, "elongComp")
 	return tmpBonds
@@ -273,12 +344,19 @@ func checkElong(preBeads, path, elong, trans):
 		for bond in bondseq[path[bead]]:
 			if not(tmpBeads.has(bond)):
 				valid = false
+				#print(1)
 			elif not(rules[tmpBeads[path[bead]][0]].has(tmpBeads[bond][0])):
 				valid = false
-			elif len(tmpBeads[bond]) < arity:
-				tmpBeads[bond].append(path[bead])
+				#print(2)
+			elif len(tmpBeads[bond][1]) < arity:
+				if not(path[bead] in tmpBeads[bond][1]):
+					tmpBeads[bond][1].append(path[bead])
+				#print(tmpBeads[bond])
+				#print("bond")
 			else:
+				#print(tmpBeads[bond])
 				valid = false
+				#print(3)
 	return valid
 
 
@@ -333,8 +411,8 @@ func fold(pos, trans):
 	var currentpos = pos
 	var oldpos = pos
 	var solution = []
-	for i in range(delta+1):
-		hang.append(trans[i])
+	for j in range(delta+1):
+		hang.append(trans[j])
 	var i = 1
 	while i < len(trans)-delta:
 		solution = filterElongSet(generateDeltaPath(currentpos, hang), hang)
@@ -343,12 +421,17 @@ func fold(pos, trans):
 			currentpos = solution[0][1]
 			addBeadF(currentpos, trans[i], solution[1][1][solution[0][1]])
 			addEdgeF(oldpos, currentpos)
+#			print(solution[1][1][currentpos], "xxx")
+			for j in range(len(solution[1][1][currentpos])):
+			#	print(bond)
+				addBondF(currentpos, solution[1][1][currentpos][j])
 			hang.pop_front()
 			hang.append(trans[i+delta-1])
 			i += 1
 		else:
 			print("Stopped folding")
 			return
+
 
 
 func addBeadF(pos, type, bonds):
@@ -388,6 +471,18 @@ func addBead():
 	beads[newPP] = [get_parent().gui.btSelect.get_selected_id(),[]]
 	BeadObjects[newPP] = nodebead
 
+
+func addBondF(from, to):
+	print("made it")
+	var nodetrans = load('res://bond.tscn').instance()
+	nodetrans.initZig(shear.xform(from*unit), shear.xform(to*unit))
+	beads[from][1].append(to)
+	beads[to][1].append(from)
+	nodetrans.name = "bond "+str(from.x)+","+str(from.y)+"->"+str(to.x)+","+str(to.y)
+	nodetrans.z_index = -3
+	print(nodetrans.name)
+	#print(beads)
+	add_child(nodetrans)
 
 
 func delBead():
@@ -452,7 +547,8 @@ func _unhandled_input(event):
 							oldP = newP
 							newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 							if (get_parent().gui.foldBtn.pressed):
-								fold(newPP, ["1", "1", "1", "1", "1", "1", "1"])#get_parent().gui.transcript.text)
+								#fold(newPP, get_parent().gui.transcript.text)
+								foldNew(newPP, get_parent().gui.transcript.text.split(","))
 							else:
 								if not(beads.has(newPP)):
 									addBead()
@@ -507,7 +603,7 @@ func _ready():
 	var tmpBonds = {}
 	#print(genCombSet(neighborhood,0))
 	var tmp = genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)
-	rules["0"] = ["0"]
+	rules["0"] = []
 	rules["1"] = ["1"]
 	rules["2"] = ["2"]
 	rules["3"] = ["3"]
