@@ -78,7 +78,7 @@ func backtrack(path, trans, bondset):
 	var sol = []
 	var bondNo = len(bondset)
 	var strength
-	var maxstrength = 0
+	var maxstrength = -1
 	for i in range(delta):
 		sol.append(-1)
 	while index > -1:
@@ -92,21 +92,29 @@ func backtrack(path, trans, bondset):
 					strength = 0
 					for i in sol:
 						strength += len(bondset[i])
-					if strength == maxstrength:
-						solutions.append([strength, sol.duplicate()])
-					elif strength > maxstrength:
+					if strength > maxstrength:
 						maxstrength = strength
-						solutions = [[strength, sol.duplicate()]]
+						solutions = [strength, [sol.duplicate()], true]
+					elif strength == maxstrength:
+						if sol[0] == solutions[1][0][0]:
+							solutions[1].append(sol.duplicate())
+						else:
+							solutions[2] = false
+					
 				else:
 					index += 1
 					sol[index] = -1
 		else:
 			index -= 1
-	return [bondset, solutions]
+	return solutions
 
 
-func foldNew(pos, trans):
+func findNext(pos, trans):
+	var det = true
 	var bondset = []
+	var tmp = []
+	var maxstrength = -1
+	var solutions = []
 	for i in range(arity+1):
 		bondset = bondset + genCombSet(neighborhood, i)
 	var tmppath
@@ -117,8 +125,30 @@ func foldNew(pos, trans):
 #		tmppath.pop_front()
 #		tmptrans = trans
 #		tmptrans.remove(0)
-		print(backtrack(tmppath, tmptrans, bondset))
-		
+		tmp = backtrack(path, trans, bondset)
+		if tmp[0] > maxstrength:
+			if tmp[2]:
+				maxstrength = tmp[0]
+				solutions = [[path, tmp[1]]]
+				det = true
+			else:
+				det = false
+		elif tmp[0] == maxstrength:
+			if path[0] == solutions[0][0][0] and tmp[1][0][0] == solutions[0][1][0][0]:
+				solutions.append([path, tmp[1]])
+			else:
+				det = false
+	if det:
+		if len(solutions) > 1:
+			print("multiple - ", maxstrength, " --- ", solutions)
+		else:
+			print("single - ", maxstrength, " --- ", solutions)
+	else:
+		print("nondeterministic")
+
+
+func foldNew(pos, trans):
+	findNext(pos, trans)
 
 
 func addToGrid(pos, gridPos):
