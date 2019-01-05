@@ -36,7 +36,7 @@ var newPP = Vector2(0,0)
 var beads = {}
 var BeadObjects = {}
 var paths = []
-var bonds = []
+#var bonds = []
 var rules = {}
 var grid = {}
 
@@ -50,25 +50,37 @@ var enddrag = Vector2(0,0)
 
 
 func valid(path, bondset, sol, index, trans):
-	var tmpBeads = beads.duplicate()
-	for i in range(index+1):
+	var tmpBeads ={}
+	for bead in path:
+		for dir in neighborhood:
+			if beads.has(bead+dir):
+				tmpBeads[bead+dir] = [beads[bead+dir][0], beads[bead+dir][1].duplicate()]
+	#tmpBeads = beads.duplicate()
+	for i in range(1, index+2):
 		tmpBeads[path[i]] = [trans[i],[]]
-		for bond in bondset[sol[i]]:
+		for bond in bondset[sol[i-1]]:
 			tmpBeads[path[i]][1].append(bond)
+			#if beads.has([path[i]+bond]) and not(tmpBeads.has([path[i]+bond])):
+			#	tmpBeads[path[i]+bond] = [beads[path[i]][0], beads[path[i]][1].duplicate()]
 			if tmpBeads.has(path[i]+bond) and not(path[i] in tmpBeads[path[i]+bond][1]):
 				tmpBeads[path[i]+bond][1].append(path[i])
 				if len(tmpBeads[path[i]+bond][1]) > arity:
+					
 					return false
-	for i in range(index+1):
-		for bond in bondset[sol[i]]:
+	for i in range(1, index+2):
+		for bond in bondset[sol[i-1]]:
 			if i>0 and path[i] + bond == path[i-1]:
+				
 				return false
-			elif not(beads.has(path[i] + bond)):
+			elif not(tmpBeads.has(path[i] + bond)):
+				
 				return false
-			elif not(rules[trans[i]].has(beads[path[i]+bond][0])):
+			elif not(rules[trans[i]].has(tmpBeads[path[i]+bond][0])):
+				
 				return false
 #			elif len(beads[path[i]+bond][1])+len(bondset[sol[i]]) > arity:
 #				value = false
+	
 	return true
 
 func backtrack(path, trans, bondset):
@@ -134,7 +146,7 @@ func findNext(pos, trans):
 			else:
 				det = false
 		elif tmp[0] == maxstrength:
-			if path[0] == solutions[0][0][0] and tmp[1][0][0] == solutions[0][1][0][0]:
+			if path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]:
 				solutions.append([path, tmp[1]])
 			else:
 				det = false
@@ -143,13 +155,31 @@ func findNext(pos, trans):
 			print("multiple - ", maxstrength, " --- ", solutions)
 		else:
 			print("single - ", maxstrength, " --- ", solutions)
+		return [solutions[0][0][1], solutions[0][1][0][0]]
 	else:
 		print("nondeterministic")
+		return []
 
 
 func foldNew(pos, trans):
-	findNext(pos, trans)
-
+	var bondset = []
+	for i in range(arity+1):
+		bondset = bondset + genCombSet(neighborhood, i)
+	var tmp1
+	var tmp2 = []
+	tmp1 = findNext(pos, trans)
+	#print("this*** ",tmp1)
+	if tmp1 != []:
+		#print(bondset[tmp1[1]], "latest")
+		for i in bondset[tmp1[1]]:
+			tmp2.append(tmp1[0] + i)
+		#print(tmp2, beads[tmp2[0]])
+		addBeadF(tmp1[0], trans[0], tmp2)
+		for j in tmp2:
+			#addBondF(Vector2(0,-1), Vector2(-1,-2))
+			#print(tmp1[0], " --> ", j)
+			addBondF(tmp1[0], j)
+		#trans.remove(0)
 
 func addToGrid(pos, gridPos):
 	var nodepoint
@@ -467,15 +497,16 @@ func fold(pos, trans):
 func addBeadF(pos, type, bonds):
 	var canvpos = shear.xform(pos*unit)
 	addToGrid(canvpos, pos)
-	var nodebead = load('res://bluedot.tscn').instance()
-	nodebead.init(canvpos, unit*0.2, type)
-	nodebead.name = 'bead_'+str(pos.x)+'_'+str(pos.y)
-	nodebead.z_index = -1
-	add_child(nodebead)
-	beads[pos] = [type,bonds]
-	for i in bonds:
-		beads[i][1].append(pos)
-	BeadObjects[pos] = nodebead
+	var nodebeadf = load('res://bluedot.tscn').instance()
+	nodebeadf.init(canvpos, unit*0.2, type)
+	nodebeadf.name = 'bead_'+str(pos.x)+'_'+str(pos.y)
+	nodebeadf.z_index = -1
+	add_child(nodebeadf)
+	beads[pos] = [type,[]]
+	#print("-----------",bonds)
+	#for i in bonds:
+	#	beads[i][1].append(pos)
+	BeadObjects[pos] = nodebeadf
 
 
 func addEdgeF(from, to):
@@ -499,6 +530,7 @@ func addBead():
 	nodebead.z_index = -1
 	add_child(nodebead)
 	beads[newPP] = [get_parent().gui.btSelect.get_selected_id(),[]]
+	#print(beads[newPP],"xxxx")
 	BeadObjects[newPP] = nodebead
 
 
@@ -506,8 +538,11 @@ func addBondF(from, to):
 	print("made it")
 	var nodetrans = load('res://bond.tscn').instance()
 	nodetrans.initZig(shear.xform(from*unit), shear.xform(to*unit))
+	#nodetrans.init(shear.xform(from*unit), shear.xform(to*unit))
+	#print(beads[from][1], " === ", beads[to][1])
 	beads[from][1].append(to)
 	beads[to][1].append(from)
+	#print(beads[from][1], " >>> ", beads[to][1])
 	nodetrans.name = "bond "+str(from.x)+","+str(from.y)+"->"+str(to.x)+","+str(to.y)
 	nodetrans.z_index = -3
 	print(nodetrans.name)

@@ -4,10 +4,10 @@ extends Line2D
 # var a = 2
 # var b = "textvar"
 
-func _ready():
+#func _ready():
 	# Called when the node is added to the scene for the first time.
 	# Initialization here
-	pass
+#	pass
 
 func init(from, to):
 	self.points[0] = from + (to-from)/4
