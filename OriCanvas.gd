@@ -10,7 +10,7 @@ const neighborhood = [Vector2(1,0), Vector2(1,1), Vector2(0,1), Vector2(-1,0), V
 var arial = load('res://arial.tres')
 
 var delta = 2
-var arity = 2
+var arity = 1
 var sigma = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 var transcript = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 
@@ -152,9 +152,11 @@ func findNext(pos, trans):
 				det = false
 	if det:
 		if len(solutions) > 1:
-			print("multiple - ", maxstrength, " --- ", solutions)
+			print("multiple")
+			#print("multiple - ", maxstrength, " --- ", solutions)
 		else:
-			print("single - ", maxstrength, " --- ", solutions)
+			print("single")
+			#print("single - ", maxstrength, " --- ", solutions)
 		return [solutions[0][0][1], solutions[0][1][0][0]]
 	else:
 		print("nondeterministic")
@@ -163,23 +165,32 @@ func findNext(pos, trans):
 
 func foldNew(pos, trans):
 	var bondset = []
+	var beadpos = pos
+	var ntrans = trans
 	for i in range(arity+1):
 		bondset = bondset + genCombSet(neighborhood, i)
 	var tmp1
-	var tmp2 = []
-	tmp1 = findNext(pos, trans)
-	#print("this*** ",tmp1)
-	if tmp1 != []:
-		#print(bondset[tmp1[1]], "latest")
-		for i in bondset[tmp1[1]]:
-			tmp2.append(tmp1[0] + i)
-		#print(tmp2, beads[tmp2[0]])
-		addBeadF(tmp1[0], trans[0], tmp2)
-		for j in tmp2:
-			#addBondF(Vector2(0,-1), Vector2(-1,-2))
-			#print(tmp1[0], " --> ", j)
-			addBondF(tmp1[0], j)
-		#trans.remove(0)
+	var tmp2
+	while len(ntrans) >= delta +1:
+		tmp2 = []
+		tmp1 = findNext(beadpos, ntrans)
+		#print("this*** ",tmp1)
+		if tmp1 != []:
+			#print(bondset[tmp1[1]], "latest")
+			for i in bondset[tmp1[1]]:
+				tmp2.append(tmp1[0] + i)
+			#print(tmp2, beads[tmp2[0]])
+			addBeadF(tmp1[0], ntrans[1], tmp2)
+			for j in tmp2:
+				#addBondF(Vector2(0,-1), Vector2(-1,-2))
+				#print(tmp1[0], " --> ", j)
+				addBondF(tmp1[0], j)
+			addEdgeF(beadpos, tmp1[0])
+			ntrans.remove(0)
+			beadpos = tmp1[0]
+		else:
+			print("nondeterministic")
+			return
 
 func addToGrid(pos, gridPos):
 	var nodepoint
@@ -613,7 +624,8 @@ func _unhandled_input(event):
 							newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 							if (get_parent().gui.foldBtn.pressed):
 								#fold(newPP, get_parent().gui.transcript.text)
-								foldNew(newPP, get_parent().gui.transcript.text.split(","))
+								ciDemo()
+								#foldNew(newPP, get_parent().gui.transcript.text.split(","))
 							else:
 								if not(beads.has(newPP)):
 									addBead()
@@ -660,6 +672,27 @@ func _unhandled_input(event):
 	#get_tree().set_input_as_handled()
 
 
+func ciDemo():
+	addBeadF(Vector2(0,0),"1",[])
+	#beads[Vector2(0,0)] = ["1",[]]
+	addBeadF(Vector2(1,0),"0",[])
+	addEdgeF(Vector2(0,0), Vector2(1,0))
+	addBeadF(Vector2(2,0),"2",[])
+	addEdgeF(Vector2(1,0), Vector2(2,0))
+	addBeadF(Vector2(3,0),"0",[])
+	addEdgeF(Vector2(2,0), Vector2(3,0))
+	addBeadF(Vector2(4,0),"5",[])
+	addEdgeF(Vector2(3,0), Vector2(4,0))
+	addBeadF(Vector2(5,0),"0",[])
+	addEdgeF(Vector2(4,0), Vector2(5,0))
+	addBeadF(Vector2(6,0),"6",[])
+	addEdgeF(Vector2(5,0), Vector2(6,0))
+	addBeadF(Vector2(6,-1),"0",[])
+	addEdgeF(Vector2(6,0), Vector2(6,-1))
+	addBeadF(Vector2(7,0),"0",[])
+	addEdgeF(Vector2(6,-1), Vector2(7,0))	
+	foldNew(Vector2(7,0), get_parent().gui.transcript.text.split(","))
+
 
 func _ready():
 	print(self.get_viewport_rect().size)
@@ -673,10 +706,15 @@ func _ready():
 	rules["2"] = ["2"]
 	rules["3"] = ["3"]
 	rules["4"] = ["4"]
+	rules["5"] = ["5"]
+	rules["6"] = ["6"]
+	rules["7"] = ["7"]
+	rules["8"] = ["8"]
 	addToGrid(Vector2(0,0), Vector2(0,0))
 	#filterSupArity({}, [Vector2(0,0), Vector2(1,0), Vector2(1,-1), Vector2(0,-1)])
 	print(len(genCartPower(tmp,delta)))
 	print(len(genCart([genCombSet(neighborhood,2) + genCombSet(neighborhood,1) + genCombSet(neighborhood,0),genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)])))
+	
 	#print(bondCombos)
 	#print(generateCartesian([1,2,3],3))
 	#PossibleBonds = filterSupArity(tmpBonds, generateDeltaPath(Vector2(0,0), [transcript[i] for i in range(delta)]))
