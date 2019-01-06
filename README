@@ -1,7 +1,8 @@
 This is going to be a simulator for 2d folding RNA transcripts. As of now the GUI works as follows. 
+Mouse wheel zooms, dragging moves the canvas.
 If the mouse cursor is over a position on the grid where a bead can be added, a colored circle appears.
 
-Double clicking adds a bead of the type which is selected in Bead type drop down list. If there was a bead there already, its 
+Double clicking adds a bead of the type which is selected in the Bead type drop down list. If there was a bead there already, its 
 type is changed.
 
 If the Delete check-button is on, double clicking an existing bead deletes it.
