@@ -9,6 +9,8 @@ onready var bondBtn = $BondBtn
 onready var foldBtn = $Fold
 onready var btSelect = $BTypeSelect
 onready var transcript = $Transcript
+onready var stepcheck = $StepCheck
+onready var stepBtn = $StepperBtn
 
 
 # class member variables go here, for example:
@@ -24,3 +26,7 @@ func _ready():
 #	# Called every frame. Delta is time since last frame.
 #	# Update game logic here.
 #	pass
+
+
+func _on_Transcript_text_changed(new_text):
+	get_parent().canvas.transcript = new_text.split(",")

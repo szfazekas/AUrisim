@@ -14,6 +14,11 @@ config/name="2ddrawing"
 run/main_scene="res://OriSim.tscn"
 config/icon="res://icon.png"
 
+[display]
+
+window/size/width=1200
+window/size/height=800
+
 [rendering]
 
 environment/default_clear_color=Color( 1, 1, 1, 1 )

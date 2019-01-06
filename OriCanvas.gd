@@ -10,7 +10,7 @@ const neighborhood = [Vector2(1,0), Vector2(1,1), Vector2(0,1), Vector2(-1,0), V
 var arial = load('res://arial.tres')
 
 var delta = 2
-var arity = 1
+var arity = 3
 var sigma = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 var transcript = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 
@@ -35,6 +35,7 @@ var newPP = Vector2(0,0)
 
 var beads = {}
 var BeadObjects = {}
+var TempObjects = []
 var paths = []
 #var bonds = []
 var rules = {}
@@ -55,13 +56,10 @@ func valid(path, bondset, sol, index, trans):
 		for dir in neighborhood:
 			if beads.has(bead+dir):
 				tmpBeads[bead+dir] = [beads[bead+dir][0], beads[bead+dir][1].duplicate()]
-	#tmpBeads = beads.duplicate()
 	for i in range(1, index+2):
 		tmpBeads[path[i]] = [trans[i],[]]
 		for bond in bondset[sol[i-1]]:
 			tmpBeads[path[i]][1].append(bond)
-			#if beads.has([path[i]+bond]) and not(tmpBeads.has([path[i]+bond])):
-			#	tmpBeads[path[i]+bond] = [beads[path[i]][0], beads[path[i]][1].duplicate()]
 			if tmpBeads.has(path[i]+bond) and not(path[i] in tmpBeads[path[i]+bond][1]):
 				tmpBeads[path[i]+bond][1].append(path[i])
 				if len(tmpBeads[path[i]+bond][1]) > arity:
@@ -78,9 +76,6 @@ func valid(path, bondset, sol, index, trans):
 			elif not(rules[trans[i]].has(tmpBeads[path[i]+bond][0])):
 				
 				return false
-#			elif len(beads[path[i]+bond][1])+len(bondset[sol[i]]) > arity:
-#				value = false
-	
 	return true
 
 func backtrack(path, trans, bondset):
@@ -98,9 +93,6 @@ func backtrack(path, trans, bondset):
 			sol[index] += 1
 			if valid(path, bondset, sol, index, trans):
 				if index == delta-1:
-					#for i in range(delta):
-					#	for j in bondset[sol[i]]:
-					#		tmp.append()
 					strength = 0
 					for i in sol:
 						strength += len(bondset[i])
@@ -133,10 +125,6 @@ func findNext(pos, trans):
 	var tmptrans
 	var paths = generateDeltaPath(pos, trans)
 	for path in paths:
-#		tmppath = path.duplicate()
-#		tmppath.pop_front()
-#		tmptrans = trans
-#		tmptrans.remove(0)
 		tmp = backtrack(path, trans, bondset)
 		if tmp[0] > maxstrength:
 			if tmp[2]:
@@ -153,11 +141,10 @@ func findNext(pos, trans):
 	if det:
 		if len(solutions) > 1:
 			print("multiple")
-			#print("multiple - ", maxstrength, " --- ", solutions)
 		else:
 			print("single")
-			#print("single - ", maxstrength, " --- ", solutions)
-		return [solutions[0][0][1], solutions[0][1][0][0]]
+		return [solutions[0][0], solutions[0][1][0]]
+		#return [solutions[0][0][1], solutions[0][1][0][0]]
 	else:
 		print("nondeterministic")
 		return []
@@ -177,20 +164,32 @@ func foldNew(pos, trans):
 		#print("this*** ",tmp1)
 		if tmp1 != []:
 			#print(bondset[tmp1[1]], "latest")
-			for i in bondset[tmp1[1]]:
-				tmp2.append(tmp1[0] + i)
+			for i in bondset[tmp1[1][0]]:
+				tmp2.append(tmp1[0][1] + i)
 			#print(tmp2, beads[tmp2[0]])
-			addBeadF(tmp1[0], ntrans[1], tmp2)
+			addBeadF(tmp1[0][1], ntrans[1], tmp2)
 			for j in tmp2:
 				#addBondF(Vector2(0,-1), Vector2(-1,-2))
 				#print(tmp1[0], " --> ", j)
-				addBondF(tmp1[0], j)
-			addEdgeF(beadpos, tmp1[0])
+				addBondF(tmp1[0][1], j)
+			addEdgeF(beadpos, tmp1[0][1])
 			ntrans.remove(0)
-			beadpos = tmp1[0]
+			beadpos = tmp1[0][1]
+			if get_parent().gui.stepcheck.pressed:
+				for i in range(2,len(tmp1[0])):
+					tmp2 = []
+					for j in bondset[tmp1[1][i-1]]:
+						addBondTemp(tmp1[0][i], tmp1[0][i] + j)
+					addBeadTemp(tmp1[0][i], ntrans[i],[])
+					addEdgeTemp(tmp1[0][i-1],tmp1[0][i])
+				update()	
+				yield(get_parent().gui.stepBtn,"pressed")
+				for i in TempObjects:
+					self.remove_child(i)
 		else:
 			print("nondeterministic")
 			return
+
 
 func addToGrid(pos, gridPos):
 	var nodepoint
@@ -201,7 +200,7 @@ func addToGrid(pos, gridPos):
 			add_child(nodepoint)
 			nodepoint.init(shear.xform((gridPos+dir)*unit))
 			nodepoint.z_index = -2
-			
+
 
 # generate all non-intersecting paths of length delta, which are consistent with beads[], starting from start
 func generateDeltaPath(start, trans):
@@ -217,16 +216,6 @@ func generateDeltaPath(start, trans):
 					dpath[i+1].append(j+[j[-1]+dir]) 
 	#print(dpath[-1])
 	return dpath[-1]
-
-
-func decrease(list, index):
-	var succ = false
-	while not(succ) and index>=0:
-		if list[index]>0:
-			list[index] = list[index] - 1
-		else:
-			index = index - 1
-
 
 
 # generate all combinations n choose k, non-recursively
@@ -291,220 +280,6 @@ func genCart(sets):
 	return cart
 
 
-# given pre-existing bond info prebonds and a path, return all beadwise bond sequences for this path, which are not self-contradictory
-func filterSupArity(preBonds, path):
-	var tmp = [] 
-	var strength = 0
-	var tmpEnv = {}
-	
-	# tmp <- all possible combinations of maximum arity many bonds for one bead
-	for i in range(arity+1):
-		tmp += genCombSet(neighborhood, i)
-	# tmp <- all sequences of length delta of bond combinations
-	tmp = genCartPower(tmp, delta)
-	# if true, throw away bond sequence, because it is invalid
-	var throw = false
-	# tmpBonds <- valid bond sequences
-	var tmpBonds = []
-	
-	# for each possible bond sequence
-	for bondset in tmp:
-		# tmpEnv <- surrounding beads
-		tmpEnv = preBonds.duplicate()
-		for bead in range(delta):
-			tmpEnv[path[bead+1]] = []
-		strength = 0
-		throw = false
-		# for each bead in the path
-		for bead in range(0,delta):
-			#tmpEnv[path[bead+1]] = []
-			# for each bond in the current bead's bonds
-			if not(throw):
-				for dir in bondset[bead]:
-					tmpEnv[path[bead+1]].append(path[bead+1]+dir)
-					# if the current bead wants to bind to something not in the present path, then add 1 to strength for the new bond
-					if not(tmpEnv.has(path[bead+1]+dir)):
-						strength += 1
-					# otherwise, check if the bonding partner has a correspoonding bond and throw away bond sequence if not
-					elif not(tmpEnv[path[bead+1]+dir].has(path[bead+1])):
-						throw = true
-					if throw or path[bead+1]+dir == path[bead]:
-						throw = true
-					#elif tmpEnv.has(path[bead]+dir):
-					#	tmpEnv[path[bead]+dir].append(-dir)
-		if not(throw):
-			tmpBonds.append([strength, tmpEnv])
-	var index = 0
-	for i in range(len(tmpBonds)):
-		if tmpBonds[i][0] > tmpBonds[index][0]:
-			index = i
-	#print(tmpBonds)
-	# return the list of bond sequences sorted by strength
-	tmpBonds.sort_custom(self, "elongComp")
-	return tmpBonds
-
-
-
-func filterElongs(preBonds, path):
-	var tmp = [] 
-	var strength = 0
-	var tmpEnv = {}
-	var returnEnv = {}
-	
-	# tmp <- all possible combinations of maximum arity many bonds for one bead
-	for i in range(arity+1):
-		tmp += genCombSet(neighborhood, i)
-	# tmp <- all sequences of length delta of bond combinations
-	tmp = genCartPower(tmp, delta)
-	# if true, throw away bond sequence, because it is invalid
-	var throw = false
-	# tmpBonds <- valid bond sequences
-	var tmpBonds = []
-	
-	# for each possible bond sequence
-	for bondset in tmp:
-		# tmpEnv <- surrounding beads
-		strength = 0
-		tmpEnv = preBonds.duplicate()
-		for bead in range(delta):
-			tmpEnv[path[bead+1]] = []
-			returnEnv[path[bead+1]] = []
-			for i in bondset[bead]:
-				tmpEnv[path[bead+1]].append(path[bead+1] + i)
-				returnEnv[path[bead+1]].append(path[bead+1] + i)
-			strength += len(bondset[bead])
-		#strength = 0
-		throw = false
-		# for each bead in the path
-		for bead in range(delta):
-			#tmpEnv[path[bead+1]] = []
-			# for each bond in the current bead's bonds
-			if not(throw):
-				for dir in bondset[bead]:
-					
-					# if the current bead wants to bind to something not in the present path, then add 1 to strength for the new bond
-					if path.has(path[bead+1]+dir) and not(tmpEnv[path[bead+1]+dir].has(path[bead+1])):
-						throw = true
-					if path[bead+1]+dir == path[bead]:
-						throw = true
-					#elif tmpEnv.has(path[bead]+dir):
-					#	tmpEnv[path[bead]+dir].append(-dir)
-		if not(throw):
-			tmpBonds.append([strength, returnEnv.duplicate()])
-	var index = 0
-	for i in range(len(tmpBonds)):
-		if tmpBonds[i][0] > tmpBonds[index][0]:
-			index = i
-#	for i in range(len(tmpBonds)):
-#		if tmpBonds[i][0] >= 3:
-#			print(tmpBonds[i])
-	# return the list of bond sequences sorted by strength
-	tmpBonds.sort_custom(self, "elongComp")
-	return tmpBonds
-
-
-
-# check if an elongation is compatible with bonding ruleset and surrounding beads
-func checkElong(preBeads, path, elong, trans):
-	var tmpBeads = preBeads.duplicate()
-	var valid = true
-	var bondseq = elong[1]
-	for bead in range(1,len(path)):
-		tmpBeads[path[bead]] = [trans[bead], []]
-	for bead in range(1,len(path)):
-		for bond in bondseq[path[bead]]:
-			if not(tmpBeads.has(bond)):
-				valid = false
-				#print(1)
-			elif not(rules[tmpBeads[path[bead]][0]].has(tmpBeads[bond][0])):
-				valid = false
-				#print(2)
-			elif len(tmpBeads[bond][1]) < arity:
-				if not(path[bead] in tmpBeads[bond][1]):
-					tmpBeads[bond][1].append(path[bead])
-				#print(tmpBeads[bond])
-				#print("bond")
-			else:
-				#print(tmpBeads[bond])
-				valid = false
-				#print(3)
-	return valid
-
-
-# compare strength of bond sequences a and b
-func elongComp(a, b):
-	if a[0] > b[0]:
-		return true
-	else:
-		return false
-
-
-func filterElongSet(eSet, trans):
-	var tmp = [[0,'nothing']]
-	var tmp2 = []
-	var maxbond = 0
-	var solution = []
-	#print(beads)
-	for path in eSet:
-		tmp2 = filterElongs(beads, path)
-		for bondseq in tmp2:
-			if checkElong(beads, path, bondseq, trans):
-				if bondseq[0] > maxbond:
-					print(bondseq)
-					maxbond = bondseq[0]
-					solution = [[path,bondseq]]
-				elif bondseq[0] == maxbond:
-					#print(bondseq[1])
-					solution.append([path, bondseq])
-	if len(solution) > 1:
-		print("multiple")
-		var currentpos = solution[0][0][1]
-		var currentbonds = solution[0][1][1][currentpos]
-		for bondseq in solution:
-			bondseq[1][1][bondseq[0][1]].sort()
-			currentbonds.sort()
-			if bondseq[0][1] != currentpos or bondseq[1][1][bondseq[0][1]] != currentbonds:
-				print("Nondeterministic")
-				#print(solution)
-				return null
-		return solution[0]
-	elif len(solution) == 1:
-		print("single")
-		return solution[0]
-	else:
-		print("no path...")
-		return null
-
-
-
-func fold(pos, trans):
-	var hang = []
-	var currentpos = pos
-	var oldpos = pos
-	var solution = []
-	for j in range(delta+1):
-		hang.append(trans[j])
-	var i = 1
-	while i < len(trans)-delta:
-		solution = filterElongSet(generateDeltaPath(currentpos, hang), hang)
-		if solution != null:
-			oldpos = currentpos
-			currentpos = solution[0][1]
-			addBeadF(currentpos, trans[i], solution[1][1][solution[0][1]])
-			addEdgeF(oldpos, currentpos)
-#			print(solution[1][1][currentpos], "xxx")
-			for j in range(len(solution[1][1][currentpos])):
-			#	print(bond)
-				addBondF(currentpos, solution[1][1][currentpos][j])
-			hang.pop_front()
-			hang.append(trans[i+delta-1])
-			i += 1
-		else:
-			print("Stopped folding")
-			return
-
-
-
 func addBeadF(pos, type, bonds):
 	var canvpos = shear.xform(pos*unit)
 	addToGrid(canvpos, pos)
@@ -514,10 +289,43 @@ func addBeadF(pos, type, bonds):
 	nodebeadf.z_index = -1
 	add_child(nodebeadf)
 	beads[pos] = [type,[]]
-	#print("-----------",bonds)
-	#for i in bonds:
-	#	beads[i][1].append(pos)
 	BeadObjects[pos] = nodebeadf
+
+
+func addBeadTemp(pos, type, bonds):
+	var canvpos = shear.xform(pos*unit)
+	addToGrid(canvpos, pos)
+	var nodebeadf = load('res://bluedot.tscn').instance()
+	nodebeadf.color = Color(0.3,0.3,1)
+	nodebeadf.init(canvpos, unit*0.2, type)
+	nodebeadf.name = 'bead_'+str(pos.x)+'_'+str(pos.y)
+	nodebeadf.z_index = -1
+	add_child(nodebeadf)
+	#beads[pos] = [type,[]]
+	TempObjects.append(nodebeadf)
+	
+	
+func addEdgeTemp(from, to):
+	var nodetrans = load('res://transcript.tscn').instance()
+	var canvfrom = shear.xform(from*unit)
+	var canvto = shear.xform(to*unit)
+	nodetrans.width = 10
+	nodetrans.default_color = Color(0.5,0.3,0.3)
+	nodetrans.init(canvfrom, canvto)
+	nodetrans.name = "trans "+str(from.x)+","+str(from.y)+"->"+str(to.x)+","+str(to.y)
+	nodetrans.z_index = -2
+	add_child(nodetrans)
+	TempObjects.append(nodetrans)
+
+
+func addBondTemp(from, to):
+	var nodetrans = load('res://bond.tscn').instance()
+	nodetrans.initZig(shear.xform(from*unit), shear.xform(to*unit))
+	#nodetrans.init(shear.xform(from*unit), shear.xform(to*unit))
+	nodetrans.name = "bond "+str(from.x)+","+str(from.y)+"->"+str(to.x)+","+str(to.y)
+	nodetrans.z_index = -3
+	add_child(nodetrans)
+	TempObjects.append(nodetrans)
 
 
 func addEdgeF(from, to):
@@ -529,35 +337,31 @@ func addEdgeF(from, to):
 	nodetrans.z_index = -2
 	BeadObjects[from].next = to
 	BeadObjects[to].previous = from
-	print(nodetrans.name)
 	add_child(nodetrans)
 
 
-func addBead():
-	addToGrid(newP, newPP)
-	var nodebead = load('res://bluedot.tscn').instance()
-	nodebead.init(newP, unit*0.2, get_parent().gui.btSelect.get_selected_id())
-	nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
-	nodebead.z_index = -1
-	add_child(nodebead)
-	beads[newPP] = [get_parent().gui.btSelect.get_selected_id(),[]]
-	#print(beads[newPP],"xxxx")
-	BeadObjects[newPP] = nodebead
+func addEdgeSeed(from, to):
+	var nodetrans = load('res://transcript.tscn').instance()
+	var canvfrom = shear.xform(from*unit)
+	var canvto = shear.xform(to*unit)
+	nodetrans.width = 17
+	nodetrans.default_color = Color(0,0,0)
+	nodetrans.init(canvfrom, canvto)
+	nodetrans.name = "trans "+str(from.x)+","+str(from.y)+"->"+str(to.x)+","+str(to.y)
+	nodetrans.z_index = -2
+	BeadObjects[from].next = to
+	BeadObjects[to].previous = from
+	add_child(nodetrans)
 
 
 func addBondF(from, to):
-	print("made it")
 	var nodetrans = load('res://bond.tscn').instance()
 	nodetrans.initZig(shear.xform(from*unit), shear.xform(to*unit))
 	#nodetrans.init(shear.xform(from*unit), shear.xform(to*unit))
-	#print(beads[from][1], " === ", beads[to][1])
 	beads[from][1].append(to)
 	beads[to][1].append(from)
-	#print(beads[from][1], " >>> ", beads[to][1])
 	nodetrans.name = "bond "+str(from.x)+","+str(from.y)+"->"+str(to.x)+","+str(to.y)
 	nodetrans.z_index = -3
-	print(nodetrans.name)
-	#print(beads)
 	add_child(nodetrans)
 
 
@@ -574,6 +378,17 @@ func delBead():
 		beads.erase(newPP)
 		BeadObjects.erase(newPP)
 
+
+
+func addBead():
+	addToGrid(newP, newPP)
+	var nodebead = load('res://bluedot.tscn').instance()
+	nodebead.init(newP, unit*0.2, get_parent().gui.btSelect.get_selected_id())
+	nodebead.name = 'bead_'+str(newPP.x)+'_'+str(newPP.y)
+	nodebead.z_index = -1
+	add_child(nodebead)
+	beads[newPP] = [get_parent().gui.btSelect.get_selected_id(),[]]
+	BeadObjects[newPP] = nodebead
 
 
 func addEdge():
@@ -624,8 +439,8 @@ func _unhandled_input(event):
 							newP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 							if (get_parent().gui.foldBtn.pressed):
 								#fold(newPP, get_parent().gui.transcript.text)
-								ciDemo()
-								#foldNew(newPP, get_parent().gui.transcript.text.split(","))
+								#ciDemo()
+								foldNew(newPP, transcript)#get_parent().gui.transcript.text.split(","))
 							else:
 								if not(beads.has(newPP)):
 									addBead()
@@ -638,10 +453,6 @@ func _unhandled_input(event):
 									
 								elif (get_parent().gui.bondBtn.pressed) and ((newPP-oldPP) in neighborhood):
 									addBond()
-								
-#							elif (get_parent().gui.foldBtn.pressed):
-#								filterElongSet(generateDeltaPath(newPP, ["1","1","2"]), ["1","1","2"])
-								
 						else:
 							delBead()
 					
@@ -670,6 +481,7 @@ func _unhandled_input(event):
 			currentP = shear.xform(Vector2(round(t.x/unit)*unit, round(t.y/unit)*unit))
 	update()
 	#get_tree().set_input_as_handled()
+
 
 
 func ciDemo():
@@ -702,10 +514,10 @@ func _ready():
 	#print(genCombSet(neighborhood,0))
 	var tmp = genCombSet(neighborhood,2)+genCombSet(neighborhood,1)+genCombSet(neighborhood,0)
 	rules["0"] = []
-	rules["1"] = ["1"]
-	rules["2"] = ["2"]
+	#rules["1"] = ["1"]
+	#rules["2"] = ["2"]
 	rules["3"] = ["3"]
-	rules["4"] = ["4"]
+	#rules["4"] = ["4"]
 	rules["5"] = ["5"]
 	rules["6"] = ["6"]
 	rules["7"] = ["7"]
@@ -733,10 +545,225 @@ func _draw():
 	var ty = shear.xform(Vector2(0,unit))
 	
 	# draw cursor: a paralellogram reflecting the shear and a filled circle where the bead is/would be placed
-	
 	#draw_line(currentP - tx/2 - ty/2, currentP - tx/2 + ty/2, color)
 	#draw_line(currentP - tx/2 + ty/2, currentP + tx/2 + ty/2, color)
 	#draw_line(currentP + tx/2 + ty/2, currentP + tx/2 - ty/2, color)
 	#draw_line(currentP + tx/2 - ty/2, currentP - tx/2 - ty/2, color)
+
 	if overBead:
 		draw_circle(currentP, unit/4, color)
+
+
+
+
+## given pre-existing bond info prebonds and a path, return all beadwise bond sequences for this path, which are not self-contradictory
+#func filterSupArity(preBonds, path):
+#	var tmp = [] 
+#	var strength = 0
+#	var tmpEnv = {}
+#
+#	# tmp <- all possible combinations of maximum arity many bonds for one bead
+#	for i in range(arity+1):
+#		tmp += genCombSet(neighborhood, i)
+#	# tmp <- all sequences of length delta of bond combinations
+#	tmp = genCartPower(tmp, delta)
+#	# if true, throw away bond sequence, because it is invalid
+#	var throw = false
+#	# tmpBonds <- valid bond sequences
+#	var tmpBonds = []
+#
+#	# for each possible bond sequence
+#	for bondset in tmp:
+#		# tmpEnv <- surrounding beads
+#		tmpEnv = preBonds.duplicate()
+#		for bead in range(delta):
+#			tmpEnv[path[bead+1]] = []
+#		strength = 0
+#		throw = false
+#		# for each bead in the path
+#		for bead in range(0,delta):
+#			#tmpEnv[path[bead+1]] = []
+#			# for each bond in the current bead's bonds
+#			if not(throw):
+#				for dir in bondset[bead]:
+#					tmpEnv[path[bead+1]].append(path[bead+1]+dir)
+#					# if the current bead wants to bind to something not in the present path, then add 1 to strength for the new bond
+#					if not(tmpEnv.has(path[bead+1]+dir)):
+#						strength += 1
+#					# otherwise, check if the bonding partner has a correspoonding bond and throw away bond sequence if not
+#					elif not(tmpEnv[path[bead+1]+dir].has(path[bead+1])):
+#						throw = true
+#					if throw or path[bead+1]+dir == path[bead]:
+#						throw = true
+#					#elif tmpEnv.has(path[bead]+dir):
+#					#	tmpEnv[path[bead]+dir].append(-dir)
+#		if not(throw):
+#			tmpBonds.append([strength, tmpEnv])
+#	var index = 0
+#	for i in range(len(tmpBonds)):
+#		if tmpBonds[i][0] > tmpBonds[index][0]:
+#			index = i
+#	#print(tmpBonds)
+#	# return the list of bond sequences sorted by strength
+#	tmpBonds.sort_custom(self, "elongComp")
+#	return tmpBonds
+#
+#
+#
+#func filterElongs(preBonds, path):
+#	var tmp = [] 
+#	var strength = 0
+#	var tmpEnv = {}
+#	var returnEnv = {}
+#
+#	# tmp <- all possible combinations of maximum arity many bonds for one bead
+#	for i in range(arity+1):
+#		tmp += genCombSet(neighborhood, i)
+#	# tmp <- all sequences of length delta of bond combinations
+#	tmp = genCartPower(tmp, delta)
+#	# if true, throw away bond sequence, because it is invalid
+#	var throw = false
+#	# tmpBonds <- valid bond sequences
+#	var tmpBonds = []
+#
+#	# for each possible bond sequence
+#	for bondset in tmp:
+#		# tmpEnv <- surrounding beads
+#		strength = 0
+#		tmpEnv = preBonds.duplicate()
+#		for bead in range(delta):
+#			tmpEnv[path[bead+1]] = []
+#			returnEnv[path[bead+1]] = []
+#			for i in bondset[bead]:
+#				tmpEnv[path[bead+1]].append(path[bead+1] + i)
+#				returnEnv[path[bead+1]].append(path[bead+1] + i)
+#			strength += len(bondset[bead])
+#		#strength = 0
+#		throw = false
+#		# for each bead in the path
+#		for bead in range(delta):
+#			#tmpEnv[path[bead+1]] = []
+#			# for each bond in the current bead's bonds
+#			if not(throw):
+#				for dir in bondset[bead]:
+#
+#					# if the current bead wants to bind to something not in the present path, then add 1 to strength for the new bond
+#					if path.has(path[bead+1]+dir) and not(tmpEnv[path[bead+1]+dir].has(path[bead+1])):
+#						throw = true
+#					if path[bead+1]+dir == path[bead]:
+#						throw = true
+#					#elif tmpEnv.has(path[bead]+dir):
+#					#	tmpEnv[path[bead]+dir].append(-dir)
+#		if not(throw):
+#			tmpBonds.append([strength, returnEnv.duplicate()])
+#	var index = 0
+#	for i in range(len(tmpBonds)):
+#		if tmpBonds[i][0] > tmpBonds[index][0]:
+#			index = i
+##	for i in range(len(tmpBonds)):
+##		if tmpBonds[i][0] >= 3:
+##			print(tmpBonds[i])
+#	# return the list of bond sequences sorted by strength
+#	tmpBonds.sort_custom(self, "elongComp")
+#	return tmpBonds
+#
+#
+#
+## check if an elongation is compatible with bonding ruleset and surrounding beads
+#func checkElong(preBeads, path, elong, trans):
+#	var tmpBeads = preBeads.duplicate()
+#	var valid = true
+#	var bondseq = elong[1]
+#	for bead in range(1,len(path)):
+#		tmpBeads[path[bead]] = [trans[bead], []]
+#	for bead in range(1,len(path)):
+#		for bond in bondseq[path[bead]]:
+#			if not(tmpBeads.has(bond)):
+#				valid = false
+#				#print(1)
+#			elif not(rules[tmpBeads[path[bead]][0]].has(tmpBeads[bond][0])):
+#				valid = false
+#				#print(2)
+#			elif len(tmpBeads[bond][1]) < arity:
+#				if not(path[bead] in tmpBeads[bond][1]):
+#					tmpBeads[bond][1].append(path[bead])
+#				#print(tmpBeads[bond])
+#				#print("bond")
+#			else:
+#				#print(tmpBeads[bond])
+#				valid = false
+#				#print(3)
+#	return valid
+#
+#
+## compare strength of bond sequences a and b
+#func elongComp(a, b):
+#	if a[0] > b[0]:
+#		return true
+#	else:
+#		return false
+#
+#
+#func filterElongSet(eSet, trans):
+#	var tmp = [[0,'nothing']]
+#	var tmp2 = []
+#	var maxbond = 0
+#	var solution = []
+#	#print(beads)
+#	for path in eSet:
+#		tmp2 = filterElongs(beads, path)
+#		for bondseq in tmp2:
+#			if checkElong(beads, path, bondseq, trans):
+#				if bondseq[0] > maxbond:
+#					print(bondseq)
+#					maxbond = bondseq[0]
+#					solution = [[path,bondseq]]
+#				elif bondseq[0] == maxbond:
+#					#print(bondseq[1])
+#					solution.append([path, bondseq])
+#	if len(solution) > 1:
+#		print("multiple")
+#		var currentpos = solution[0][0][1]
+#		var currentbonds = solution[0][1][1][currentpos]
+#		for bondseq in solution:
+#			bondseq[1][1][bondseq[0][1]].sort()
+#			currentbonds.sort()
+#			if bondseq[0][1] != currentpos or bondseq[1][1][bondseq[0][1]] != currentbonds:
+#				print("Nondeterministic")
+#				#print(solution)
+#				return null
+#		return solution[0]
+#	elif len(solution) == 1:
+#		print("single")
+#		return solution[0]
+#	else:
+#		print("no path...")
+#		return null
+#
+#
+#
+#func fold(pos, trans):
+#	var hang = []
+#	var currentpos = pos
+#	var oldpos = pos
+#	var solution = []
+#	for j in range(delta+1):
+#		hang.append(trans[j])
+#	var i = 1
+#	while i < len(trans)-delta:
+#		solution = filterElongSet(generateDeltaPath(currentpos, hang), hang)
+#		if solution != null:
+#			oldpos = currentpos
+#			currentpos = solution[0][1]
+#			addBeadF(currentpos, trans[i], solution[1][1][solution[0][1]])
+#			addEdgeF(oldpos, currentpos)
+##			print(solution[1][1][currentpos], "xxx")
+#			for j in range(len(solution[1][1][currentpos])):
+#			#	print(bond)
+#				addBondF(currentpos, solution[1][1][currentpos][j])
+#			hang.pop_front()
+#			hang.append(trans[i+delta-1])
+#			i += 1
+#		else:
+#			print("Stopped folding")
+#			return

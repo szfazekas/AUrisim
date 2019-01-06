@@ -2,7 +2,7 @@
 
 [ext_resource path="res://transcript.gd" type="Script" id=1]
 
-[node name="transcript" type="Line2D" index="0"]
+[node name="transcript" type="Line2D"]
 
 points = PoolVector2Array( 0, 0, 0, 0 )
 width = 13.0
@@ -11,6 +11,6 @@ texture_mode = 45
 sharp_limit = 2.0
 round_precision = 8
 script = ExtResource( 1 )
-_sections_unfolded = [ "Transform" ]
+_sections_unfolded = [ "Border", "Capping", "Fill", "Material", "Pause", "Transform", "Visibility", "Z Index" ]
 
 
