@@ -13,6 +13,11 @@ func _ready():
 	add_item("1")
 	add_item("2")
 	add_item("3")
+	add_item("4")
+	add_item("5")
+	add_item("6")
+	add_item("7")
+	add_item("8")
 	#select(2)
 
 func get_selected_id():

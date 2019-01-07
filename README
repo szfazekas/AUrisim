@@ -1,1 +1,24 @@
-This is going to be a simulator for 2d folding RNA transcripts.
+This is going to be a simulator for 2d folding RNA transcripts. As of now the GUI works as follows. 
+Mouse wheel zooms, dragging moves the canvas.
+If the mouse cursor is over a position on the grid where a bead can be added, a colored circle appears.
+
+Double clicking adds a bead of the type which is selected in the Bead type drop down list. If there was a bead there already, its 
+type is changed.
+
+If the Delete check-button is on, double clicking an existing bead deletes it.
+
+If Follow button is on and a bead is placed, it will be added into a path following the last double clicked bead.
+
+If Bond button is on, then double click adds a bond between the last two beads which were double clicked.
+
+If Fold button is on then double clicking a bead starts to fold the transcript given in the textbox starting from the bead
+which was clicked. The transcript has to start with the type of the bead we double click as starting point 
+(so, usually, this would mean it starts with the last bead of the seed).
+
+If the Stepwise button is on when folding starts, then beads are placed one-by-one every time the Step button is pressed.
+One of the most stable elongations fixing the current bead is drawn with different color.
+
+Load OS loads up a file containing all necessary parameters of an OS. As demo, two files are included, a pyramid construction
+and a glider. After selecting the file, the seed is drawn on canvas. Folding the transcript is then done as above.
+
+The Clear canvas button clears all beads, transcript edges and bonds from the canvas.
