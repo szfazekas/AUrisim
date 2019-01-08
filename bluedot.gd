@@ -19,6 +19,7 @@ var arialshift = Vector2(arial.get_ascent()/3.5, -arial.get_ascent()/2.5)
 
 var previous = null
 var next = null
+var bonds = []
 
 
 

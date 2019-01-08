@@ -163,6 +163,17 @@ func foldNew(pos, trans):
 		tmp1 = findNext(beadpos, ntrans)
 		#print("this*** ",tmp1)
 		if tmp1 != []:
+			if get_parent().gui.stepcheck.pressed:
+				for i in range(1,len(tmp1[0])):
+					tmp2 = []
+					for j in bondset[tmp1[1][i-1]]:
+						addBondTemp(tmp1[0][i], tmp1[0][i] + j)
+					addBeadTemp(tmp1[0][i], ntrans[i],[])
+					addEdgeTemp(tmp1[0][i-1],tmp1[0][i])
+				update()	
+				yield(get_parent().gui.stepBtn,"pressed")
+				for i in TempObjects:
+					self.remove_child(i)
 			#print(bondset[tmp1[1]], "latest")
 			for i in bondset[tmp1[1][0]]:
 				tmp2.append(tmp1[0][1] + i)
@@ -175,17 +186,7 @@ func foldNew(pos, trans):
 			addEdgeF(beadpos, tmp1[0][1])
 			ntrans.remove(0)
 			beadpos = tmp1[0][1]
-			if get_parent().gui.stepcheck.pressed:
-				for i in range(2,len(tmp1[0])):
-					tmp2 = []
-					for j in bondset[tmp1[1][i-1]]:
-						addBondTemp(tmp1[0][i], tmp1[0][i] + j)
-					addBeadTemp(tmp1[0][i], ntrans[i],[])
-					addEdgeTemp(tmp1[0][i-1],tmp1[0][i])
-				update()	
-				yield(get_parent().gui.stepBtn,"pressed")
-				for i in TempObjects:
-					self.remove_child(i)
+			
 		else:
 			print("nondeterministic")
 			return
