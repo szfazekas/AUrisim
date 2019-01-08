@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://OriSim.gd" type="Script" id=1]
 [ext_resource path="res://OriCanvas.tscn" type="PackedScene" id=2]
@@ -8,6 +8,7 @@
 [ext_resource path="res://Arial.ttf" type="DynamicFontData" id=6]
 [ext_resource path="res://LoadOSBtn.gd" type="Script" id=7]
 [ext_resource path="res://LoadOS.gd" type="Script" id=8]
+[ext_resource path="res://SaveRule.gd" type="Script" id=9]
 
 [sub_resource type="DynamicFont" id=1]
 
@@ -438,6 +439,61 @@ text = "STEP"
 flat = false
 align = 1
 
+[node name="SaveRuleBtn" type="Button" parent="OriGUI" index="15"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 9.0
+margin_top = 551.0
+margin_right = 99.0
+margin_bottom = 571.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "Save ruleset"
+flat = false
+align = 1
+
+[node name="SaveRule" type="FileDialog" parent="OriGUI/SaveRuleBtn" index="0"]
+
+visible = false
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 275.0
+margin_bottom = 130.0
+rect_min_size = Vector2( 200, 70 )
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+popup_exclusive = false
+window_title = "Save a File"
+resizable = false
+dialog_hide_on_ok = false
+mode_overrides_title = true
+mode = 4
+access = 0
+filters = PoolStringArray(  )
+show_hidden_files = false
+current_dir = "res://"
+current_file = ""
+current_path = "res://"
+script = ExtResource( 9 )
+
 [connection signal="text_changed" from="OriGUI/Transcript" to="OriGUI" method="_on_Transcript_text_changed"]
 
 [connection signal="pressed" from="OriGUI/LoadOSBtn" to="OriGUI/LoadOSBtn/LoadOS" method="_on_LoadOSBtn_pressed"]
@@ -445,5 +501,9 @@ align = 1
 [connection signal="file_selected" from="OriGUI/LoadOSBtn/LoadOS" to="." method="_on_LoadOS_file_selected"]
 
 [connection signal="pressed" from="OriGUI/ClearBtn" to="." method="_on_ClearBtn_pressed"]
+
+[connection signal="pressed" from="OriGUI/SaveRuleBtn" to="OriGUI/SaveRuleBtn/SaveRule" method="_on_SaveRuleBtn_pressed"]
+
+[connection signal="file_selected" from="OriGUI/SaveRuleBtn/SaveRule" to="." method="_on_SaveRule_file_selected"]
 
 

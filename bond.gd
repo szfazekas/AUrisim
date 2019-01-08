@@ -1,5 +1,6 @@
 extends Line2D
 
+var ends = []
 # class member variables go here, for example:
 # var a = 2
 # var b = "textvar"
@@ -10,11 +11,13 @@ extends Line2D
 #	pass
 
 func init(from, to):
+	ends = [from, to]
 	self.points[0] = from + (to-from)/4
 	self.points[1] = to - (to-from)/4
 
 
 func initZig(from, to):
+	ends = [from, to]
 	width = 4
 	points[0] = from + (to-from)/4
 	points[1] = from + ((to-from)/2.5).rotated(PI/24)

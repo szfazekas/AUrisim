@@ -72,4 +72,33 @@ func _on_ClearBtn_pressed():
 		if child.name.match("*bond*") or child.name.match("*bead*") or child.name.match("*trans*"):
 			canvas.remove_child(child)
 			canvas.beads = {}
+			canvas.rules = {}
 			canvas.BeadObjects = {}
+
+
+func _on_SaveRule_file_selected(path):
+	var tmpRules = {}
+	var beads = canvas.beads
+	var file = File.new()
+	#file.open(path, file.WRITE)
+#	for child in canvas.get_children():
+#		if child.name.match("*bond*"):
+#			if not tmpRules.has(beads[child.ends[0]][0]):
+#				tmpRules[beads[child.ends[0]][0]] = [beads[child.ends[1]][0]]
+#			elif not tmpRules[beads[child.ends[0]][0]].has(beads[child.ends[1]][0]):
+#				tmpRules[beads[child.ends[0]][0]].append(beads[child.ends[1]][0])
+#			if not tmpRules.has(beads[child.ends[1]][0]):
+#				tmpRules[beads[child.ends[1]][0]] = [beads[child.ends[0]][0]]
+#			elif not tmpRules[beads[child.ends[1]][0]].has(beads[child.ends[0]][0]):
+#				tmpRules[beads[child.ends[1]][0]].append(beads[child.ends[1]][0])
+	for key in beads.keys():
+		if not tmpRules.has(beads[key][0]):
+			tmpRules[beads[key][0]] = []
+		for bond in beads[key][1]:
+			if not (beads[bond][0] in tmpRules[beads[key][0]]):
+				tmpRules[beads[key][0]].append(beads[bond][0])
+			if not tmpRules.has(beads[bond][0]):
+				tmpRules[beads[bond][0]] = [beads[key][0]]
+	print(tmpRules)
+	#file.close()
+			
