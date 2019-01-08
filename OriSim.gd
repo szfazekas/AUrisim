@@ -131,7 +131,9 @@ func _on_LoadRule_file_selected(path):
 				canvas.rules[tmp2[0]] = []
 			if not canvas.rules.has(tmp2[1]):
 				canvas.rules[tmp2[1]] = []
-			canvas.rules[tmp2[0]].append(tmp2[1])
-			canvas.rules[tmp2[1]].append(tmp2[0])
+			if not canvas.rules[tmp2[0]].has(tmp2[1]):
+				canvas.rules[tmp2[0]].append(tmp2[1])
+			if not canvas.rules[tmp2[1]].has(tmp2[0]):
+				canvas.rules[tmp2[1]].append(tmp2[0])
 	#canvas.print(canvas.rules)
 	file.close()
