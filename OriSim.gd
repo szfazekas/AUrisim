@@ -53,9 +53,10 @@ func _on_LoadOS_file_selected(path):
 	#load rules
 	tmp = file.get_line().split(",")
 	for i in tmp:
-		tmp2 = i.split("=")
-		canvas.rules[tmp2[0]].append(tmp2[1])
-		canvas.rules[tmp2[1]].append(tmp2[0])
+		if i != "":
+			tmp2 = i.split("=")
+			canvas.rules[tmp2[0]].append(tmp2[1])
+			canvas.rules[tmp2[1]].append(tmp2[0])
 	#load seed bonds
 	tmp = file.get_line().split(";")
 	if tmp[0] != "":
@@ -80,7 +81,7 @@ func _on_SaveRule_file_selected(path):
 	var tmpRules = {}
 	var beads = canvas.beads
 	var file = File.new()
-	#file.open(path, file.WRITE)
+	file.open(path, file.WRITE)
 #	for child in canvas.get_children():
 #		if child.name.match("*bond*"):
 #			if not tmpRules.has(beads[child.ends[0]][0]):
@@ -99,6 +100,38 @@ func _on_SaveRule_file_selected(path):
 				tmpRules[beads[key][0]].append(beads[bond][0])
 			if not tmpRules.has(beads[bond][0]):
 				tmpRules[beads[bond][0]] = [beads[key][0]]
-	print(tmpRules)
-	#file.close()
+	for i in tmpRules.keys():
+		for j in tmpRules[i]:
+			#file.store_string("hello")
+			file.store_string(i+"="+j+",")
+	file.close()
 			
+
+func _on_LoadRule_file_selected(path):
+	var tmp
+	var tmp2
+	var file = File.new()
+	canvas.rules = {}
+	file.open(path, file.READ)
+	tmp = file.get_line().split(",")
+#	for child in canvas.get_children():
+#		if child.name.match("*bond*"):
+#			if not tmpRules.has(beads[child.ends[0]][0]):
+#				tmpRules[beads[child.ends[0]][0]] = [beads[child.ends[1]][0]]
+#			elif not tmpRules[beads[child.ends[0]][0]].has(beads[child.ends[1]][0]):
+#				tmpRules[beads[child.ends[0]][0]].append(beads[child.ends[1]][0])
+#			if not tmpRules.has(beads[child.ends[1]][0]):
+#				tmpRules[beads[child.ends[1]][0]] = [beads[child.ends[0]][0]]
+#			elif not tmpRules[beads[child.ends[1]][0]].has(beads[child.ends[0]][0]):
+#				tmpRules[beads[child.ends[1]][0]].append(beads[child.ends[1]][0])
+	for i in tmp:
+		if i != "":
+			tmp2 = i.split("=")
+			if not canvas.rules.has(tmp2[0]):
+				canvas.rules[tmp2[0]] = []
+			if not canvas.rules.has(tmp2[1]):
+				canvas.rules[tmp2[1]] = []
+			canvas.rules[tmp2[0]].append(tmp2[1])
+			canvas.rules[tmp2[1]].append(tmp2[0])
+	#canvas.print(canvas.rules)
+	file.close()
