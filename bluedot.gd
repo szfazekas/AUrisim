@@ -27,6 +27,7 @@ func init(pos, r, l):
 	center = pos
 	radius = r
 	label = l
+	update()
 	#draw_circle(center, r, color)
 #func _process(delta):
 	#update()
