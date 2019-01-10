@@ -52,7 +52,35 @@ var enddrag = Vector2(0,0)
 
 
 
-
+func validFast(path, bondset, sol, index, trans):
+	var tmpBeads ={}
+	for bead in path:
+		for dir in neighborhood:
+			if beads.has(bead+dir):
+				tmpBeads[bead+dir] = [beads[bead+dir][0], beads[bead+dir][1].duplicate()]
+	for i in range(1, index+2):
+		if not rules.has(trans[i]):
+			rules[trans[i]] = []
+		tmpBeads[path[i]] = [trans[i],[]]
+		for bond in bondset[sol[i-1]]:
+			tmpBeads[path[i]][1].append(bond)
+			if tmpBeads.has(path[i]+bond) and not(path[i] in tmpBeads[path[i]+bond][1]):
+				tmpBeads[path[i]+bond][1].append(path[i])
+				if len(tmpBeads[path[i]+bond][1]) > arity:
+					
+					return false
+	for i in range(1, index+2):
+		for bond in bondset[sol[i-1]]:
+			if i>0 and path[i] + bond == path[i-1]:
+				
+				return false
+			elif not(tmpBeads.has(path[i] + bond)):
+				
+				return false
+			elif not(rules[trans[i]].has(tmpBeads[path[i]+bond][0])):
+				
+				return false
+	return true
 
 func backtrackFast(path, trans, bondset):
 	var tmp = {}
@@ -62,6 +90,8 @@ func backtrackFast(path, trans, bondset):
 	var bondNo = len(bondset)
 	var strength
 	var maxstrength = -1
+	var det = true
+	
 	for i in range(delta):
 		sol.append(-1)
 	while index > -1:
@@ -74,19 +104,45 @@ func backtrackFast(path, trans, bondset):
 						strength += len(bondset[i])
 					if strength > maxstrength:
 						maxstrength = strength
-						solutions = [strength, [sol.duplicate()], true]
+						solutions.push_front(sol.duplicate())
+						det = true
 					elif strength == maxstrength:
-						if sol[0] == solutions[1][0][0]:
-							solutions[1].append(sol.duplicate())
+						if sol[0] == solutions[0][0]:
+							solutions.push_front(sol.duplicate())
 						else:
-							solutions[2] = false
-					
+							det = false
+					elif sol[0] == solutions[0][0]:
+						solutions.push_front(sol.duplicate())
 				else:
 					index += 1
 					sol[index] = -1
 		else:
 			index -= 1
-	return solutions
+	return [maxstrength, solutions, det]
+
+
+func checkNextFast(path, sol, st, trans, bondset):
+	var tmp = {}
+	var index = len(sol)
+	var solutions = []
+	#var sol = []
+	var bondNo = len(bondset)
+	var strength
+	var maxstrength = st
+	#for i in range(delta):
+	#sol.remove(0)
+	sol.append(-1)
+	while sol[index] < bondNo - 1:
+		sol[index] += 1
+		if valid(path, bondset, sol, index, trans):
+			strength = st
+			strength += len(bondset[index])
+			if strength >= maxstrength:
+				maxstrength = strength
+				solutions.push_front(sol.duplicate())
+			else:
+				solutions.append(sol.duplicate())
+	return [maxstrength, solutions]
 
 
 func generateDeltaPathFast(path, trans):
@@ -116,34 +172,39 @@ func findFirstFast(pos, trans):
 	var tmptrans
 	var paths = generateDeltaPath([pos], trans)
 	for path in paths:
-		tmp = backtrack(path, trans, bondset)
+		tmp = backtrackFast(path, trans, bondset)
 		if tmp[0] > maxstrength:
 			if tmp[2]:
 				maxstrength = tmp[0]
-				solutions = [[path, tmp[1]]]
+				solutions.push_front([path, tmp[1]])
 				det = true
 			else:
 				det = false
 		elif tmp[0] == maxstrength:
-			if path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]:
-				solutions.append([path, tmp[1]])
-			else:
+			solutions[0].append([path, tmp[1]])
+			if not(path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]):
 				det = false
+		elif tmp[0] < maxstrength:
+			solutions.append([path, tmp[1]])
 	if det:
-		if len(solutions) > 1:
-			print("multiple")
-			pass
-		else:
-			print("single")
-			pass
-		return solutions
+		tmp = []
+		for sol in solutions:
+			if sol[0][1] == solutions[0][0][1]:
+				tmp.append(sol)
+		#if len(tmp) > 1:
+		#	print("multiple")
+		#	pass
+		#else:
+		#	print("single")
+		#	pass
+		return tmp
 		#return [solutions[0][0][1], solutions[0][1][0][0]]
 	else:
 		#print("nondeterministic")
 		return []
 
 
-func findNextFast(pos, trans):
+func findNextFast(previous, trans):
 	var det = true
 	var bondset = []
 	var tmp = []
