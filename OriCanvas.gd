@@ -170,22 +170,22 @@ func findFirstFast(pos, trans):
 		bondset = bondset + genCombSet(neighborhood, i)
 	var tmppath
 	var tmptrans
-	var paths = generateDeltaPath([pos], trans)
+	var paths = generateDeltaPathFast([pos], trans)
 	for path in paths:
 		tmp = backtrackFast(path, trans, bondset)
 		if tmp[0] > maxstrength:
 			if tmp[2]:
 				maxstrength = tmp[0]
-				solutions.push_front([path, tmp[1]])
+				solutions.push_front([path, tmp[1], tmp[0]])
 				det = true
 			else:
 				det = false
 		elif tmp[0] == maxstrength:
-			solutions[0].append([path, tmp[1]])
+			solutions[0].append([path, tmp[1], tmp[0]])
 			if not(path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]):
 				det = false
 		elif tmp[0] < maxstrength:
-			solutions.append([path, tmp[1]])
+			solutions.append([path, tmp[1], tmp[0]])
 	if det:
 		tmp = []
 		for sol in solutions:
@@ -214,21 +214,25 @@ func findNextFast(previous, trans):
 		bondset = bondset + genCombSet(neighborhood, i)
 	var tmppath
 	var tmptrans
-	var paths = generateDeltaPath(pos, trans)
-	for path in paths:
-		tmp = backtrack(path, trans, bondset)
-		if tmp[0] > maxstrength:
-			if tmp[2]:
-				maxstrength = tmp[0]
-				solutions = [[path, tmp[1]]]
-				det = true
-			else:
-				det = false
-		elif tmp[0] == maxstrength:
-			if path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]:
-				solutions.append([path, tmp[1]])
-			else:
-				det = false
+	var paths = []
+	for item in previous:
+		item[0].remove(0)
+		paths.append(generateDeltaPathFast(item[0], trans))
+	for item in paths:
+		for sol in item[1]:
+			tmp = checkNextFast(item[0], sol, item[2], trans, bondset)
+			if tmp[0] > maxstrength:
+				if tmp[2]:
+					maxstrength = tmp[0]
+					solutions = [[item[0], tmp[1]]]
+					det = true
+				else:
+					det = false
+			elif tmp[0] == maxstrength:
+				if item[0][1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]:
+					solutions.append([item[0], tmp[1]])
+				else:
+					det = false
 	if det:
 		if len(solutions) > 1:
 			print("multiple")
