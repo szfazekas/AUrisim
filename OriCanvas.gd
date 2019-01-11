@@ -123,26 +123,28 @@ func backtrackFast(path, trans, bondset):
 
 func checkNextFast(path, sol, st, trans, bondset):
 	var tmp = {}
-	var index = len(sol)
+	var index = len(sol) - 1
 	var solutions = []
 	#var sol = []
 	var bondNo = len(bondset)
 	var strength
-	var maxstrength = st
+	var maxstrength = -1
 	#for i in range(delta):
-	#sol.remove(0)
+	sol.remove(0)
 	sol.append(-1)
+	#print(sol, index)
 	while sol[index] < bondNo - 1:
 		sol[index] += 1
 		if valid(path, bondset, sol, index, trans):
-			strength = st
-			strength += len(bondset[index])
+			strength = 0
+			for i in range(1, delta+1):
+				strength += len(bondset[sol[i-1]])
 			if strength >= maxstrength:
 				maxstrength = strength
 				solutions.push_front(sol.duplicate())
 			else:
 				solutions.append(sol.duplicate())
-	return [maxstrength, solutions]
+	return [maxstrength, solutions, true]
 
 
 func generateDeltaPathFast(path, trans):
@@ -218,21 +220,21 @@ func findNextFast(previous, trans):
 	for item in previous:
 		item[0].remove(0)
 		paths.append(generateDeltaPathFast(item[0], trans))
-	for item in paths:
-		for sol in item[1]:
-			tmp = checkNextFast(item[0], sol, item[2], trans, bondset)
-			if tmp[0] > maxstrength:
-				if tmp[2]:
+	for item in range(len(previous)):
+		for path in paths[item]:
+			for sol in previous[item][1]:
+				#print(path)
+				tmp = checkNextFast(path, sol, previous[item][2], trans, bondset)
+				if tmp[0] > maxstrength:
 					maxstrength = tmp[0]
-					solutions = [[item[0], tmp[1]]]
+					solutions = [[path, tmp[1], maxstrength]]
 					det = true
-				else:
-					det = false
-			elif tmp[0] == maxstrength:
-				if item[0][1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]:
-					solutions.append([item[0], tmp[1]])
-				else:
-					det = false
+				elif tmp[0] == maxstrength:
+					if path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]:
+						solutions.append([path, tmp[1], maxstrength])
+					else:
+						det = false
+	print(solutions)
 	if det:
 		if len(solutions) > 1:
 			print("multiple")
@@ -243,7 +245,7 @@ func findNextFast(previous, trans):
 		return solutions
 		#return [solutions[0][0][1], solutions[0][1][0][0]]
 	else:
-		#print("nondeterministic")
+		print("nondeterministic")
 		return []
 
 
@@ -256,7 +258,7 @@ func foldFast(pos, trans):
 	var tmp1
 	var tmp2
 	tmp2 = []
-	tmp1 = findFirst(beadpos, ntrans)
+	tmp1 = findFirstFast(beadpos, ntrans)
 		#print("this*** ",tmp1)
 	if tmp1 != []:
 		if get_parent().gui.stepcheck.pressed:
@@ -271,17 +273,18 @@ func foldFast(pos, trans):
 			for i in TempObjects:
 				self.remove_child(i)
 		#print(bondset[tmp1[1]], "latest")
-		for i in bondset[tmp1[1][0]]:
-			tmp2.append(tmp1[0][1] + i)
+		print(tmp1[0][1][0])
+		for i in bondset[tmp1[0][1][0][0]]:
+			tmp2.append(tmp1[0][0][1] + i)
 		#print(tmp2, beads[tmp2[0]])
-		addBeadF(tmp1[0][1], ntrans[1], tmp2)
+		addBeadF(tmp1[0][0][1], ntrans[1], tmp2)
 		for j in tmp2:
 			#addBondF(Vector2(0,-1), Vector2(-1,-2))
 			#print(tmp1[0], " --> ", j)
-			addBondF(tmp1[0][1], j)
-		addEdgeF(beadpos, tmp1[0][1])
+			addBondF(tmp1[0][0][1], j)
+		addEdgeF(beadpos, tmp1[0][0][1])
 		ntrans.remove(0)
-		beadpos = tmp1[0][1]
+		beadpos = tmp1[0][0][1]
 		#update()
 		yield(get_tree(), "idle_frame")
 	else:
@@ -289,7 +292,7 @@ func foldFast(pos, trans):
 		return
 	while len(ntrans) >= delta +1:
 		tmp2 = []
-		tmp1 = findNextFast(beadpos, ntrans)
+		tmp1 = findNextFast(tmp1, ntrans)
 		#print("this*** ",tmp1)
 		if tmp1 != []:
 			if get_parent().gui.stepcheck.pressed:
@@ -304,17 +307,17 @@ func foldFast(pos, trans):
 				for i in TempObjects:
 					self.remove_child(i)
 			#print(bondset[tmp1[1]], "latest")
-			for i in bondset[tmp1[1][0]]:
-				tmp2.append(tmp1[0][1] + i)
+			for i in bondset[tmp1[0][1][0][0]]:
+				tmp2.append(tmp1[0][0][1] + i)
 			#print(tmp2, beads[tmp2[0]])
-			addBeadF(tmp1[0][1], ntrans[1], tmp2)
+			addBeadF(tmp1[0][0][1], ntrans[1], tmp2)
 			for j in tmp2:
 				#addBondF(Vector2(0,-1), Vector2(-1,-2))
 				#print(tmp1[0], " --> ", j)
-				addBondF(tmp1[0][1], j)
-			addEdgeF(beadpos, tmp1[0][1])
+				addBondF(tmp1[0][0][1], j)
+			addEdgeF(beadpos, tmp1[0][0][1])
 			ntrans.remove(0)
-			beadpos = tmp1[0][1]
+			beadpos = tmp1[0][0][1]
 			#update()
 			yield(get_tree(), "idle_frame")
 		else:
@@ -338,6 +341,7 @@ func valid(path, bondset, sol, index, trans):
 	for i in range(1, index+2):
 		if not rules.has(trans[i]):
 			rules[trans[i]] = []
+		#print(path)
 		tmpBeads[path[i]] = [trans[i],[]]
 		for bond in bondset[sol[i-1]]:
 			tmpBeads[path[i]][1].append(bond)
@@ -726,7 +730,8 @@ func _unhandled_input(event):
 							if (get_parent().gui.foldBtn.pressed):
 								#fold(newPP, get_parent().gui.transcript.text)
 								#ciDemo()
-								foldNew(newPP, transcript)#get_parent().gui.transcript.text.split(","))
+								foldFast(newPP, transcript)
+								#foldNew(newPP, transcript)#get_parent().gui.transcript.text.split(","))
 							else:
 								if not(beads.has(newPP)):
 									addBead()
