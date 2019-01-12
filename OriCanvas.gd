@@ -121,14 +121,16 @@ func backtrackFast(path, trans, bondset):
 	return [maxstrength, solutions, det]
 
 
-func checkNextFast(path, sol, st, trans, bondset):
+func checkNextFast(path, solin, st, trans, bondset):
 	var tmp = {}
+	var sol = solin.duplicate()
 	var index = len(sol) - 1
 	var solutions = []
 	#var sol = []
 	var bondNo = len(bondset)
 	var strength
 	var maxstrength = -1
+	
 	#for i in range(delta):
 	sol.remove(0)
 	sol.append(-1)
@@ -149,7 +151,7 @@ func checkNextFast(path, sol, st, trans, bondset):
 
 func generateDeltaPathFast(path, trans):
 	#var prolong = [{}]
-	var dpath = [[path]]
+	var dpath = [[path.duplicate()]]
 	for i in range(delta + 1 - len(path)):
 		#prolong.append({})
 		dpath.append([])
@@ -183,10 +185,13 @@ func findFirstFast(pos, trans):
 			else:
 				det = false
 		elif tmp[0] == maxstrength:
-			solutions[0].append([path, tmp[1], tmp[0]])
+			#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
+			#solutions[0].append([path, tmp[1], tmp[0]])
+			solutions.push_front([path, tmp[1], tmp[0]])
 			if not(path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]):
 				det = false
 		elif tmp[0] < maxstrength:
+			#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
 			solutions.append([path, tmp[1], tmp[0]])
 	if det:
 		tmp = []
@@ -199,6 +204,7 @@ func findFirstFast(pos, trans):
 		#else:
 		#	print("single")
 		#	pass
+		#print(tmp)
 		return tmp
 		#return [solutions[0][0][1], solutions[0][1][0][0]]
 	else:
@@ -218,13 +224,17 @@ func findNextFast(previous, trans):
 	var tmptrans
 	var paths = []
 	for item in previous:
-		item[0].remove(0)
-		paths.append(generateDeltaPathFast(item[0], trans))
+		#print("item:  ", item[0])
+		tmppath = item[0].duplicate()
+		tmppath.remove(0)
+		paths.append(generateDeltaPathFast(tmppath, trans))
+	#print("xxx",paths)
 	for item in range(len(previous)):
 		for path in paths[item]:
 			for sol in previous[item][1]:
 				#print(path)
 				tmp = checkNextFast(path, sol, previous[item][2], trans, bondset)
+				#print(tmp)
 				if tmp[0] > maxstrength:
 					maxstrength = tmp[0]
 					solutions = [[path, tmp[1], maxstrength]]
@@ -234,14 +244,15 @@ func findNextFast(previous, trans):
 						solutions.append([path, tmp[1], maxstrength])
 					else:
 						det = false
-	print(solutions)
+	#print(solutions)
 	if det:
-		if len(solutions) > 1:
-			print("multiple")
-			pass
-		else:
-			print("single")
-			pass
+		if get_parent().gui.stepcheck.pressed:
+			if len(solutions) > 1:
+				print("multiple")
+				pass
+			else:
+				print("single")
+				pass
 		return solutions
 		#return [solutions[0][0][1], solutions[0][1][0][0]]
 	else:
@@ -262,18 +273,18 @@ func foldFast(pos, trans):
 		#print("this*** ",tmp1)
 	if tmp1 != []:
 		if get_parent().gui.stepcheck.pressed:
-			for i in range(1,len(tmp1[0])):
+			for i in range(1,len(tmp1[0][0])):
 				tmp2 = []
-				for j in bondset[tmp1[1][i-1]]:
-					addBondTemp(tmp1[0][i], tmp1[0][i] + j)
-				addBeadTemp(tmp1[0][i], ntrans[i],[])
-				addEdgeTemp(tmp1[0][i-1],tmp1[0][i])
+				for j in bondset[tmp1[0][1][0][i-1]]:
+					addBondTemp(tmp1[0][0][i], tmp1[0][0][i] + j)
+				addBeadTemp(tmp1[0][0][i], ntrans[i],[])
+				addEdgeTemp(tmp1[0][0][i-1],tmp1[0][0][i])
 			update()	
 			yield(get_parent().gui.stepBtn,"pressed")
 			for i in TempObjects:
 				self.remove_child(i)
 		#print(bondset[tmp1[1]], "latest")
-		print(tmp1[0][1][0])
+		#print(tmp1[0][1][0])
 		for i in bondset[tmp1[0][1][0][0]]:
 			tmp2.append(tmp1[0][0][1] + i)
 		#print(tmp2, beads[tmp2[0]])
@@ -290,18 +301,20 @@ func foldFast(pos, trans):
 	else:
 		#print("nondeterministic")
 		return
+	#print(tmp1)
 	while len(ntrans) >= delta +1:
 		tmp2 = []
 		tmp1 = findNextFast(tmp1, ntrans)
+		#print(tmp1)
 		#print("this*** ",tmp1)
 		if tmp1 != []:
 			if get_parent().gui.stepcheck.pressed:
-				for i in range(1,len(tmp1[0])):
+				for i in range(1,len(tmp1[0][0])):
 					tmp2 = []
-					for j in bondset[tmp1[1][i-1]]:
-						addBondTemp(tmp1[0][i], tmp1[0][i] + j)
-					addBeadTemp(tmp1[0][i], ntrans[i],[])
-					addEdgeTemp(tmp1[0][i-1],tmp1[0][i])
+					for j in bondset[tmp1[0][1][0][i-1]]:
+						addBondTemp(tmp1[0][0][i], tmp1[0][0][i] + j)
+					addBeadTemp(tmp1[0][0][i], ntrans[i],[])
+					addEdgeTemp(tmp1[0][0][i-1],tmp1[0][0][i])
 				update()	
 				yield(get_parent().gui.stepBtn,"pressed")
 				for i in TempObjects:
