@@ -8,9 +8,11 @@ extends Node2D
 const neighborhood = [Vector2(1,0), Vector2(1,1), Vector2(0,1), Vector2(-1,0), Vector2(-1,-1), Vector2(0,-1)]
 
 var arial = load('res://arial.tres')
+#update the drawing after adding drawCount many beads to the scene
+var drawCount = 50
 
-var delta = 2
-var arity = 3
+var delta = 1
+var arity = 1
 var sigma = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 var transcript = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
 
@@ -36,6 +38,7 @@ var newPP = Vector2(0,0)
 var beads = {}
 var BeadObjects = {}
 var TempObjects = []
+var GridPoints = []
 var paths = []
 #var bonds = []
 var rules = {}
@@ -261,6 +264,7 @@ func findNextFast(previous, trans):
 
 
 func foldFast(pos, trans):
+	var beadCount = 0
 	var bondset = []
 	var beadpos = pos
 	var ntrans = trans
@@ -272,6 +276,7 @@ func foldFast(pos, trans):
 	tmp1 = findFirstFast(beadpos, ntrans)
 		#print("this*** ",tmp1)
 	if tmp1 != []:
+		beadCount += 1
 		if get_parent().gui.stepcheck.pressed:
 			for i in range(1,len(tmp1[0][0])):
 				tmp2 = []
@@ -308,6 +313,7 @@ func foldFast(pos, trans):
 		#print(tmp1)
 		#print("this*** ",tmp1)
 		if tmp1 != []:
+			beadCount += 1
 			if get_parent().gui.stepcheck.pressed:
 				for i in range(1,len(tmp1[0][0])):
 					tmp2 = []
@@ -332,7 +338,8 @@ func foldFast(pos, trans):
 			ntrans.remove(0)
 			beadpos = tmp1[0][0][1]
 			#update()
-			yield(get_tree(), "idle_frame")
+			if beadCount % drawCount == 0:
+				yield(get_tree(), "idle_frame")
 		else:
 			#print("nondeterministic")
 			return
@@ -503,6 +510,7 @@ func addToGrid(pos, gridPos):
 			add_child(nodepoint)
 			nodepoint.init(shear.xform((gridPos+dir)*unit))
 			nodepoint.z_index = -2
+			GridPoints.append(nodepoint)
 
 
 # generate all non-intersecting paths of length delta, which are consistent with beads[], starting from start
