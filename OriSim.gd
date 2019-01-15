@@ -29,7 +29,7 @@ func _on_LoadOS_file_selected(path):
 	var tmp2 = []
 	var prev
 	var current
-	file.open(get_node("OriGUI/LoadOSBtn/LoadOS").current_file, file.READ)
+	file.open(path, file.READ)
 	canvas.delta = int(file.get_line())
 	canvas.arity = int(file.get_line())
 	tmp = file.get_line().split("->")
@@ -70,12 +70,14 @@ func _on_LoadOS_file_selected(path):
 
 func _on_ClearBtn_pressed():
 	for child in canvas.get_children():
-		if child.name.match("*bond*") or child.name.match("*bead*") or child.name.match("*trans*"):
+		if child.name.match("*bond*") or child.name.match("*bead*") or child.name.match("*trans*") or canvas.GridPoints.has(child):
 			canvas.remove_child(child)
-			canvas.beads = {}
-			canvas.rules = {}
-			canvas.BeadObjects = {}
-
+	canvas.beads = {}
+	canvas.rules = {}
+	canvas.BeadObjects = {}
+	canvas.GridPoints = []
+	canvas.grid = {}
+	canvas.addToGrid(Vector2(0,0), Vector2(0,0))
 
 func _on_SaveRule_file_selected(path):
 	var tmpRules = {}
@@ -137,3 +139,11 @@ func _on_LoadRule_file_selected(path):
 				canvas.rules[tmp2[1]].append(tmp2[0])
 	#canvas.print(canvas.rules)
 	file.close()
+
+
+func _on_DeltaBox_value_changed(value):
+	canvas.delta = value
+
+
+func _on_ArityBox_value_changed(value):
+	canvas.arity = value
