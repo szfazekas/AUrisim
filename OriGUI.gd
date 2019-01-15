@@ -11,6 +11,8 @@ onready var btSelect = $BTypeSelect
 onready var transcript = $Transcript
 onready var stepcheck = $StepCheck
 onready var stepBtn = $StepperBtn
+onready var arityBox = $ArityDelta/ArityBox
+onready var deltaBox = $ArityDelta/DeltaBox
 
 
 # class member variables go here, for example:

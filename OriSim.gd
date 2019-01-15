@@ -31,7 +31,9 @@ func _on_LoadOS_file_selected(path):
 	var current
 	file.open(path, file.READ)
 	canvas.delta = int(file.get_line())
+	gui.deltaBox.value = canvas.delta
 	canvas.arity = int(file.get_line())
+	gui.arityBox.value = canvas.arity
 	tmp = file.get_line().split("->")
 	#load seed 
 	for i in tmp:
