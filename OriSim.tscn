@@ -704,9 +704,32 @@ editable = true
 prefix = ""
 suffix = ""
 
-[connection signal="text_changed" from="OriGUI/Transcript" to="." method="_on_Transcript_text_changed"]
+[node name="PutBondBtn" type="Button" parent="OriGUI" index="17"]
 
-[connection signal="text_changed" from="OriGUI/Transcript" to="OriGUI" method="_on_Transcript_text_changed"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 10.0
+margin_top = 688.0
+margin_right = 110.0
+margin_bottom = 708.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "All bonds"
+flat = false
+align = 1
+
+[connection signal="text_changed" from="OriGUI/Transcript" to="." method="_on_Transcript_text_changed"]
 
 [connection signal="pressed" from="OriGUI/PutBtn" to="." method="_on_PutBtn_pressed"]
 
@@ -727,5 +750,7 @@ suffix = ""
 [connection signal="value_changed" from="OriGUI/ArityDelta/ArityBox" to="." method="_on_ArityBox_value_changed"]
 
 [connection signal="value_changed" from="OriGUI/ArityDelta/DeltaBox" to="." method="_on_DeltaBox_value_changed"]
+
+[connection signal="pressed" from="OriGUI/PutBondBtn" to="." method="_on_PutBondBtn_pressed"]
 
 

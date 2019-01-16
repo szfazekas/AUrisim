@@ -165,7 +165,17 @@ func _on_PutBtn_pressed():
 		canvas.beads[where][0] = canvas.transcript[i%len(canvas.transcript)]
 		where = beadobjects[where].next
 		i += 1
-
+	beadobjects[where].label = canvas.transcript[i%len(canvas.transcript)]
+	beadobjects[where].update()
+	canvas.beads[where][0] = canvas.transcript[i%len(canvas.transcript)]
 
 func _on_Transcript_text_changed(new_text):
 	canvas.transcript = new_text.split(",")
+
+
+func _on_PutBondBtn_pressed():
+	for key in canvas.beads.keys():
+		for dir in canvas.neighborhood:
+			if canvas.beads.has(key+dir) and not(key+dir in canvas.beads[key][1]):
+				canvas.beads[key][1].append(key+dir)
+				canvas.addBondF(key, key+dir)
