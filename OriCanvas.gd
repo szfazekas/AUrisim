@@ -14,7 +14,7 @@ var drawCount = 50
 var delta = 1
 var arity = 1
 var sigma = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
-var transcript = [1,2,1,2,3,1,2,1,3,3,2,1,1,2]
+var transcript = ["0","6","8","5","7","2","4","1","4","2","7","5","8","5","7","2","7","0","0"]
 
 var rotation_ang = 50
 var angle_from = 75

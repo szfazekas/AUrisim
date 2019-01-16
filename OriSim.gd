@@ -149,3 +149,23 @@ func _on_DeltaBox_value_changed(value):
 
 func _on_ArityBox_value_changed(value):
 	canvas.arity = value
+
+
+func _on_PutBtn_pressed():
+	var where = canvas.newPP
+	var beadobjects = canvas.BeadObjects
+	if not beadobjects.has(where):
+		return
+	while beadobjects[where].previous != null:
+		where = beadobjects[where].previous
+	var i = 0
+	while beadobjects[where].next != null:
+		beadobjects[where].label = canvas.transcript[i%len(canvas.transcript)]
+		beadobjects[where].update()
+		canvas.beads[where][0] = canvas.transcript[i%len(canvas.transcript)]
+		where = beadobjects[where].next
+		i += 1
+
+
+func _on_Transcript_text_changed(new_text):
+	canvas.transcript = new_text.split(",")

@@ -704,7 +704,11 @@ editable = true
 prefix = ""
 suffix = ""
 
+[connection signal="text_changed" from="OriGUI/Transcript" to="." method="_on_Transcript_text_changed"]
+
 [connection signal="text_changed" from="OriGUI/Transcript" to="OriGUI" method="_on_Transcript_text_changed"]
+
+[connection signal="pressed" from="OriGUI/PutBtn" to="." method="_on_PutBtn_pressed"]
 
 [connection signal="pressed" from="OriGUI/ClearBtn" to="." method="_on_ClearBtn_pressed"]
 

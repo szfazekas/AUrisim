@@ -30,5 +30,5 @@ func _ready():
 #	pass
 
 
-func _on_Transcript_text_changed(new_text):
-	get_parent().canvas.transcript = new_text.split(",")
+#func _on_Transcript_text_changed(new_text):
+#	get_parent().canvas.transcript = new_text.split(",")
