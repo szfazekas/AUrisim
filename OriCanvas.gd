@@ -85,6 +85,9 @@ func validFast(path, bondset, sol, index, trans):
 				return false
 	return true
 
+
+
+
 func backtrackFast(path, trans, bondset):
 	var tmp = {}
 	var index = 0
@@ -119,6 +122,47 @@ func backtrackFast(path, trans, bondset):
 				else:
 					index += 1
 					sol[index] = -1
+		else:
+			index -= 1
+	return [maxstrength, solutions, det]
+
+
+func backtrackFastPrime(path, trans, bondset):
+	var tmp = {}
+	var index = 0
+	var solutions = []
+	var sol = []
+	var bondNo = len(bondset)
+	var strength
+	var maxstrength = -1
+	var det = true
+	
+	for i in range(delta):
+		sol.append(-1)
+	while index > -1:
+		if sol[index] < bondNo - 1:
+			sol[index] += 1
+			strength = 0
+			for i in range(index+1):
+				strength += len(bondset[sol[i]])
+			if strength + (delta - 1 - index) * arity > maxstrength:
+				if valid(path, bondset, sol, index, trans):
+					if index == delta-1:
+						
+						if strength > maxstrength:
+							maxstrength = strength
+							solutions.push_front(sol.duplicate())
+							det = true
+						elif strength == maxstrength:
+							if sol[0] == solutions[0][0]:
+								solutions.push_front(sol.duplicate())
+							else:
+								det = false
+						elif sol[0] == solutions[0][0]:
+							solutions.push_front(sol.duplicate())
+					else:
+						index += 1
+						sol[index] = -1
 		else:
 			index -= 1
 	return [maxstrength, solutions, det]
@@ -179,7 +223,7 @@ func findFirstFast(pos, trans):
 	var tmptrans
 	var paths = generateDeltaPathFast([pos], trans)
 	for path in paths:
-		tmp = backtrackFast(path, trans, bondset)
+		tmp = backtrackFastPrime(path, trans, bondset)
 		if tmp[0] > maxstrength:
 			if tmp[2]:
 				maxstrength = tmp[0]
@@ -190,9 +234,13 @@ func findFirstFast(pos, trans):
 		elif tmp[0] == maxstrength:
 			#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
 			#solutions[0].append([path, tmp[1], tmp[0]])
+			
+			if solutions != []:
+				if not(path[1] == solutions[0][0][1]):
+					det = false
+				elif not(tmp[1][0][0] == solutions[0][1][0][0]):
+					det = false
 			solutions.push_front([path, tmp[1], tmp[0]])
-			if not(path[1] == solutions[0][0][1] and tmp[1][0][0] == solutions[0][1][0][0]):
-				det = false
 		elif tmp[0] < maxstrength:
 			#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
 			solutions.append([path, tmp[1], tmp[0]])
@@ -274,7 +322,11 @@ func foldFast(pos, trans):
 	var tmp2
 	tmp2 = []
 	tmp1 = findFirstFast(beadpos, ntrans)
-		#print("this*** ",tmp1)
+	#for item in tmp1:
+	#	if not(item[0][1] in tmp2):
+	#		tmp2.append(item[0][1])
+	#print(tmp2)
+	#tmp2 = []
 	if tmp1 != []:
 		beadCount += 1
 		if get_parent().gui.stepcheck.pressed:
@@ -304,7 +356,7 @@ func foldFast(pos, trans):
 		#update()
 		yield(get_tree(), "idle_frame")
 	else:
-		#print("nondeterministic")
+		print("nondeterministic")
 		return
 	#print(tmp1)
 	while len(ntrans) >= delta +1:
