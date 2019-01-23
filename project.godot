@@ -19,7 +19,12 @@ config/icon="res://icon.png"
 window/size/width=1200
 window/size/height=800
 
+[physics]
+
+2d/thread_model=2
+
 [rendering]
 
+threads/thread_model=2
 environment/default_clear_color=Color( 1, 1, 1, 1 )
 environment/default_environment="res://default_env.tres"

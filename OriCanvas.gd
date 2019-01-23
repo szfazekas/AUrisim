@@ -210,8 +210,50 @@ func generateDeltaPathFast(path, trans):
 	#print(dpath[-1])
 	return dpath[-1]
 
+func generateDeltaPathThread(par):
+	var path  = par[0].duplicate()
+	var trans = par[1].duplicate()
+	#var prolong = [{}]
+	var dpath = [[path.duplicate()]]
+	for i in range(delta + 1 - len(path)):
+		#prolong.append({})
+		dpath.append([])
+		for j in dpath[i]:
+			for dir in neighborhood:
+				if not(beads.has(j[-1]+dir) or j.has(j[-1]+dir)):
+					#prolong[i][j[-1]+dir] = trans[i]
+					dpath[i+1].append(j+[j[-1]+dir]) 
+	#print(dpath[-1])
+	return dpath[-1]
+
+func generateDeltaPathThreaded(path, trans):
+	var result = []
+	var threads = []
+	var tmppath = []
+	var tmptrans = trans.duplicate()
+	tmptrans.remove(0)
+	var dpath = [[path.duplicate()]]
+	for i in range(6):
+		if not beads.has(dpath[0][0][-1]+neighborhood[i]):
+			threads.append(Thread.new())
+			tmppath.append(path.duplicate())
+			tmppath[-1].append(dpath[0][0][-1]+neighborhood[i])
+	for i in range(len(threads)):
+		threads[i].start(self, "generateDeltaPathThread", [tmppath[i], tmptrans])
+	for i in range(len(threads)):
+		#print(threads[i].wait_to_finish())
+		result = result + threads[i].wait_to_finish()
+		
+	#print(dpath[-1])
+	#print(result)
+	return result
+
 
 func findFirstFast(pos, trans):
+	var threads = []
+	for i in range(6):
+		threads.append(Thread.new())
+	
 	var det = true
 	var bondset = []
 	var tmp = []
@@ -221,7 +263,13 @@ func findFirstFast(pos, trans):
 		bondset = bondset + genCombSet(neighborhood, i)
 	var tmppath
 	var tmptrans
-	var paths = generateDeltaPathFast([pos], trans)
+	#var paths = generateDeltaPathThreaded([pos], trans)
+	var paths = generateDeltaPathThreaded([pos], trans)
+	if len(paths)>100000:
+		print(len(paths))
+		return []
+	#print(len(paths))
+	#yield(get_parent().gui.stepBtn,"pressed")
 	for path in paths:
 		tmp = backtrackFastPrime(path, trans, bondset)
 		if tmp[0] > maxstrength:
@@ -568,7 +616,7 @@ func addToGrid(pos, gridPos):
 # generate all non-intersecting paths of length delta, which are consistent with beads[], starting from start
 func generateDeltaPath(start, trans):
 	#var prolong = [{}]
-	var dpath = [[[start]]]
+	var dpath = [[start]]
 	for i in range(delta):
 		#prolong.append({})
 		dpath.append([])
@@ -578,6 +626,7 @@ func generateDeltaPath(start, trans):
 					#prolong[i][j[-1]+dir] = trans[i]
 					dpath[i+1].append(j+[j[-1]+dir]) 
 	#print(dpath[-1])
+	print(dpath[-1])
 	return dpath[-1]
 
 
@@ -831,11 +880,13 @@ func _unhandled_input(event):
 				
 		elif event.button_index == BUTTON_WHEEL_UP:
 			var tr = get_transform()
-			self.transform = Transform2D(tr.x*1.02, tr.y*1.02, tr.origin)
+			#self.transform = Transform2D(tr.x*1.02, tr.y*1.02, tr.origin)
+			self.transform = Transform2D(tr.x*1.02, tr.y*1.02, event.position-(event.position-tr.origin)*1.02)
 			
 		elif event.button_index == BUTTON_WHEEL_DOWN:
 			var tr = get_transform()
-			self.transform = Transform2D(tr.x*0.98, tr.y*0.98, tr.origin)
+			#self.transform = Transform2D(tr.x*0.98, tr.y*0.98, tr.origin)
+			self.transform = Transform2D(tr.x*0.98, tr.y*0.98, event.position-(event.position-tr.origin)*0.98)
 	
 	if event is InputEventMouseMotion:
 		if pressed:
@@ -923,6 +974,111 @@ func _draw():
 
 
 
+
+func findFirstThread(paths, trans, bondset):
+	var tmp = []
+	var solutions = []
+	var maxstrength = -1
+	var det = true
+	for path in paths:
+		tmp = backtrackFastPrime(path, trans, bondset)
+		if tmp[0] > maxstrength:
+			if tmp[2]:
+				maxstrength = tmp[0]
+				solutions.push_front([path, tmp[1], tmp[0]])
+				det = true
+			else:
+				det = false
+		elif tmp[0] == maxstrength:
+				#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
+				#solutions[0].append([path, tmp[1], tmp[0]])
+				
+			if solutions != []:
+				if not(path[1] == solutions[0][0][1]):
+					det = false
+				elif not(tmp[1][0][0] == solutions[0][1][0][0]):
+					det = false
+			solutions.push_front([path, tmp[1], tmp[0]])
+		elif tmp[0] < maxstrength:
+				#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
+			solutions.append([path, tmp[1], tmp[0]])
+	if det:
+		tmp = []
+		for sol in solutions:
+			if sol[0][1] == solutions[0][0][1]:
+				tmp.append(sol)
+			#if len(tmp) > 1:
+			#	print("multiple")
+			#	pass
+			#else:
+			#	print("single")
+			#	pass
+			#print(tmp)
+		return tmp
+			#return [solutions[0][0][1], solutions[0][1][0][0]]
+	else:
+			#print("nondeterministic")
+		return []
+
+
+
+
+func findFirstThreaded(pos, trans):
+	var threads = []
+	for i in range(6):
+		threads.append(Thread.new())
+	
+	var det = true
+	var bondset = []
+	var tmp = []
+	var maxstrength = -1
+	var solutions = []
+	for i in range(arity+1):
+		bondset = bondset + genCombSet(neighborhood, i)
+	var tmppath
+	var tmptrans
+	var paths = generateDeltaPathFast([pos], trans)
+	print(len(paths))
+	#yield(get_parent().gui.stepBtn,"pressed")
+	for path in paths:
+		tmp = backtrackFastPrime(path, trans, bondset)
+		if tmp[0] > maxstrength:
+			if tmp[2]:
+				maxstrength = tmp[0]
+				solutions.push_front([path, tmp[1], tmp[0]])
+				det = true
+			else:
+				det = false
+		elif tmp[0] == maxstrength:
+			#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
+			#solutions[0].append([path, tmp[1], tmp[0]])
+			
+			if solutions != []:
+				if not(path[1] == solutions[0][0][1]):
+					det = false
+				elif not(tmp[1][0][0] == solutions[0][1][0][0]):
+					det = false
+			solutions.push_front([path, tmp[1], tmp[0]])
+		elif tmp[0] < maxstrength:
+			#solutions[0] = [[path, tmp[1], tmp[0]]] +solutions[0]
+			solutions.append([path, tmp[1], tmp[0]])
+	if det:
+		tmp = []
+		for sol in solutions:
+			if sol[0][1] == solutions[0][0][1]:
+				tmp.append(sol)
+		#if len(tmp) > 1:
+		#	print("multiple")
+		#	pass
+		#else:
+		#	print("single")
+		#	pass
+		#print(tmp)
+		return tmp
+		#return [solutions[0][0][1], solutions[0][1][0][0]]
+	else:
+		#print("nondeterministic")
+		return []
 
 ## given pre-existing bond info prebonds and a path, return all beadwise bond sequences for this path, which are not self-contradictory
 #func filterSupArity(preBonds, path):
