@@ -38,10 +38,10 @@ func _on_LoadOS_file_selected(path):
 	#load seed 
 	for i in tmp:
 		tmp2 = i.split(",")
-		current = Vector2(int(tmp2[1]), int(tmp2[2]))
+		current = Vector2(int(tmp2[1].strip_edges()), int(tmp2[2].strip_edges()))
 		#add seed bead
-		canvas.addBeadF(current, tmp2[0], [])
-		canvas.rules[tmp2[0]] = []
+		canvas.addBeadF(current, tmp2[0].strip_edges(), [])
+		canvas.rules[tmp2[0].strip_edges()] = []
 		#add seed edge
 		if prev != null:
 			canvas.addEdgeSeed(prev, current)
@@ -49,7 +49,10 @@ func _on_LoadOS_file_selected(path):
 	#load transcript
 	tmp = file.get_line()
 	get_node("OriGUI/Transcript").text = tmp
-	canvas.transcript = tmp.split(",")
+	canvas.transcript = []
+	for i in tmp.split(","):
+		canvas.transcript.append(i.strip_edges())
+	#canvas.transcript = tmp.split(",")
 	for i in canvas.transcript:
 		canvas.rules[i] = []
 	#load rules
@@ -57,9 +60,14 @@ func _on_LoadOS_file_selected(path):
 	for i in tmp:
 		if i != "":
 			tmp2 = i.split("=")
-			canvas.rules[tmp2[0]].append(tmp2[1])
-			canvas.rules[tmp2[1]].append(tmp2[0])
+			if not canvas.rules.has(tmp2[0].strip_edges()):
+				canvas.rules[tmp2[0].strip_edges()] = []
+			if not canvas.rules.has(tmp2[1].strip_edges()):
+				canvas.rules[tmp2[1].strip_edges()] = []	
+			canvas.rules[tmp2[0].strip_edges()].append(tmp2[1].strip_edges())
+			canvas.rules[tmp2[1].strip_edges()].append(tmp2[0].strip_edges())
 	#load seed bonds
+	print(canvas.rules)
 	tmp = file.get_line().split(";")
 	if tmp[0] != "":
 		for i in tmp:
