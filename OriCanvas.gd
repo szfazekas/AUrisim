@@ -260,7 +260,7 @@ func findFirstFast(pos, trans):
 	var maxstrength = -1
 	var solutions = []
 	for i in range(arity+1):
-		bondset = bondset + genCombSet(neighborhood, i)
+		bondset = genCombSet(neighborhood, i) + bondset
 	var tmppath
 	var tmptrans
 	#var paths = generateDeltaPathThreaded([pos], trans)
@@ -318,7 +318,7 @@ func findNextFast(previous, trans):
 	var maxstrength = -1
 	var solutions = []
 	for i in range(arity+1):
-		bondset = bondset + genCombSet(neighborhood, i)
+		bondset = genCombSet(neighborhood, i) + bondset
 	var tmppath
 	var tmptrans
 	var paths = []
@@ -365,7 +365,7 @@ func foldFast(pos, trans):
 	var beadpos = pos
 	var ntrans = trans
 	for i in range(arity+1):
-		bondset = bondset + genCombSet(neighborhood, i)
+		bondset = genCombSet(neighborhood, i) + bondset
 	var tmp1
 	var tmp2
 	tmp2 = []
