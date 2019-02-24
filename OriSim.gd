@@ -187,3 +187,7 @@ func _on_PutBondBtn_pressed():
 			if canvas.beads.has(key+dir) and not(key+dir in canvas.beads[key][1]):
 				canvas.beads[key][1].append(key+dir)
 				canvas.addBondF(key, key+dir)
+
+func _on_SavePNG_pressed():
+	#vp = canvas.get_viewport()
+	pass
