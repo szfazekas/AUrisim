@@ -22,3 +22,7 @@ Load OS loads up a file containing all necessary parameters of an OS. As demo, t
 and a glider. After selecting the file, the seed is drawn on canvas. Folding the transcript is then done as above.
 
 The Clear canvas button clears all beads, transcript edges and bonds from the canvas.
+
+# Acknowledgment
+
+This work was supported by JSPS Kakenhi Grant Number 18K19779.
